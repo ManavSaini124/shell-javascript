@@ -69,12 +69,17 @@ const externalCommand = (args) => {
     //   stdio: 'inherit',
     //   encoding: 'utf8',
     // });
+  const command = args[0];
+  const paths = process.env.PATH.split(":");
+
+  for (const dir of paths) {
+    const fullPath = `${dir}/${command}`;
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
       const proc = spawnSync(fullPath, args.slice(1), { stdio: "inherit" });
-      // proc.on("exit", () => prompt()); // async
       return 1;
     }
   }
+}
   return 0;
 }
 
