@@ -10,7 +10,7 @@ const prompt=()=>{
   rl.question("$ ", (answer) => {
     if(answer === "exit 0") {
       rl.close();
-      return;
+      process.exit(0);
     }
     console.log(`${answer}: command not found`)
     prompt();
