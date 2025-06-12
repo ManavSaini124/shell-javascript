@@ -127,6 +127,11 @@ const externalCommand = (args) => {
   return 0;
 }
 
+const pwd = (args) => {
+  if (args[0] === "pwd") {
+    console.log(process.cwd());
+  }
+}
 
 const prompt=()=>{
   rl.question("$ ", (answer) => {
@@ -147,6 +152,7 @@ const prompt=()=>{
 //     exit(args);
 //     echo(args);
 //     type(args);
+//     pwd(args);
 //     unexpected(args);
 //     prompt();
 //   });
