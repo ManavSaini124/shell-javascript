@@ -28,7 +28,7 @@ const prompt=()=>{
       }
       else{
         // if the second argument is not echo or exit then print the command not found message
-        console.log(`${args[1]}: command not found`);
+        console.log(`${args[1]}: not found`);
       }
     }
     
