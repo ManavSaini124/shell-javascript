@@ -44,6 +44,11 @@ const builtins ={
       }
     }
   },
+  pwd: (args) => {
+    if (args[0] === "pwd") {
+      console.log(process.cwd());
+    }
+  }
 }
 
 const parting =(answer)=>{
