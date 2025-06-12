@@ -22,7 +22,7 @@ const prompt=()=>{
     }
 
     else if(args[0] == "type"){
-      if(args[1] == "echo" || args[1] == "exit"){
+      if(args[1] == "echo" || args[1] == "exit" || args[1] == "type"){
         // if the second argument is echo or exit then print the shell builtin message
         console.log(`${args[1]} is a shell builtin`);
       }
