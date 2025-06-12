@@ -72,9 +72,8 @@ const externalCommand = (args) => {
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
       const proc = spawnSync(fullPath, args.slice(1), { stdio: "inherit" });
       proc.on("exit", () => prompt()); // async
-      return;
+      return 1;
     }
-    return 1;
   }
   return 0;
 }
