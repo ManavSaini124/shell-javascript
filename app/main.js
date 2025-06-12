@@ -1,6 +1,6 @@
 const readline = require("readline");
 const fs = require("fs");
-const {spawn} = require("child_process");
+const {spawn, spawnSync} = require("child_process");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -29,7 +29,10 @@ const echo = (args) => {
 const unexpected = (args) => {
   // If the first argument is not "echo" or "exit", print an error message
   if (args[0] !== "echo" && args[0] !== "exit" && args[0] !== "type") {
-    console.log(`${args[0]}: command not found`);
+    const runnable = externalCommand(args);
+    if (!runnable) {
+      console.log(`${args[0]}: command not found`);
+    }
   }
 };
 
@@ -60,18 +63,16 @@ const type = (args) => {
 }
 
 const externalCommand = (args) => {
-  const command = args[0];
-  const paths = process.env.PATH.split(':');
-  for(const dir of paths){
-    const completePath = `${dir}/${command}`;
-    if(fs.existsSync(completePath) && fs.statSync(completePath).isFile()) {
-      const child = spawn(completePath, args.slice(1), { stdio: 'inherit' });
-      child.on('error', (err) => {
-        console.error(`Error executing command: ${err.message}`);
-      });
-      return;
-    }
+  if(args.length > 1){
+    const command_args = args.slice(1);
+    spawnSync(args[0], command_args, {
+      stdio: 'inherit',
+      encoding: 'utf8',
+      shell: true
+    });
+    return 1;
   }
+  return 0;
 }
 
 
