@@ -65,11 +65,15 @@ const type = (args) => {
 const externalCommand = (args) => {
   if(args.length > 1){
     const command_args = args.slice(1);
-    spawnSync(args[0], command_args, {
-      stdio: 'inherit',
-      encoding: 'utf8',
-      shell: true
-    });
+    // spawnSync(args[0], command_args, {
+    //   stdio: 'inherit',
+    //   encoding: 'utf8',
+    // });
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      const proc = spawnSync(fullPath, args.slice(1), { stdio: "inherit" });
+      proc.on("exit", () => prompt()); // async
+      return;
+    }
     return 1;
   }
   return 0;
