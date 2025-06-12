@@ -1,5 +1,6 @@
 const readline = require("readline");
 const fs = require("fs");
+const {spawn} = require("child_process");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -39,6 +40,12 @@ const type = (args) => {
       console.log(`${args[1]} is a shell builtin`);
     }
     else{
+      if (args.length < 2) {
+        console.log("type: missing argument");
+        return;
+      }
+      
+      // access the PATH environment variable to find the command
       const dirs = process.env.PATH.split(':');
       for( const dir in dirs){
         const filePath = `${dirs[dir]}/${args[1]}`;
@@ -48,6 +55,21 @@ const type = (args) => {
         }
       }
       console.log(`${args[1]}: not found`);
+    }
+  }
+}
+
+const externalCommand = (args) => {
+  const command = args[0];
+  const paths = process.env.PATH.split(':');
+  for(const dir of paths){
+    const completePath = `${dir}/${command}`;
+    if(fs.existsSync(completePath) && fs.statSync(completePath).isFile()) {
+      const child = spawn(completePath, args.slice(1), { stdio: 'inherit' });
+      child.on('error', (err) => {
+        console.error(`Error executing command: ${err.message}`);
+      });
+      return;
     }
   }
 }
