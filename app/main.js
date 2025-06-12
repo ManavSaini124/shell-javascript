@@ -75,7 +75,7 @@ const externalCommand = (args) => {
   for (const dir of paths) {
     const fullPath = `${dir}/${command}`;
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      const proc = spawnSync(fullPath, args.slice(1), { stdio: "inherit" });
+      const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
       return 1;
     }
   }
