@@ -20,6 +20,17 @@ const prompt=()=>{
     else if(args[0] == "echo"){
       console.log(args.slice(1).join(" "));
     }
+
+    else if(args[0] == "type"){
+      if(args[1] == "echo" || args[1] == "exit"){
+        // if the second argument is echo or exit then print the shell builtin message
+        console.log(`${args[1]} is a shell builtin`);
+      }
+      else{
+        // if the second argument is not echo or exit then print the command not found message
+        console.log(`${args[1]}: command not found`);
+      }
+    }
     
     else{ 
       // if any invali argument then print the command not found message
