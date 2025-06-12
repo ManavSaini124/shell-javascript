@@ -7,6 +7,45 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+const builtins ={
+  echo: (args)=>{
+    if(args[0] == "echo"){
+      console.log(args.slice(1).join(" "));
+   }
+  },
+  exit:(args)=>{
+    if (args[0] === "exit" && args[1] === "0") {
+      rl.close();
+      process.exit(0);
+  }
+  },
+  type: (args)=>{
+    const validCommands = ["echo", "exit", "type"];
+    if(args[0] === "type"){
+      if(validCommands.includes(args[1])){
+        console.log(`${args[1]} is a shell builtin`);
+      }
+      else{
+        if (args.length < 2) {
+          console.log("type: missing argument");
+          return;
+        }
+        
+        // access the PATH environment variable to find the command
+        const dirs = process.env.PATH.split(':');
+        for( const dir in dirs){
+          const filePath = `${dirs[dir]}/${args[1]}`;
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+            console.log(`${args[1]} is ${filePath}`);
+            return;
+          }
+        }
+        console.log(`${args[1]}: not found`);
+      }
+    }
+  },
+}
+
 const parting =(answer)=>{
   answer = answer.trim();
   const args = answer.split(" ");
@@ -87,12 +126,25 @@ const externalCommand = (args) => {
 const prompt=()=>{
   rl.question("$ ", (answer) => {
     const args =parting (answer);
-    exit(args);
-    echo(args);
-    type(args);
-    unexpected(args);
+    const command = args[0];
+
+    if (builtins[command]) {
+      builtins[command](args);
+    } else {
+      unexpected(args);
+    }
     prompt();
   });
 }
+// const prompt=()=>{
+//   rl.question("$ ", (answer) => {
+//     const args =parting (answer);
+//     exit(args);
+//     echo(args);
+//     type(args);
+//     unexpected(args);
+//     prompt();
+//   });
+// }
 
 prompt();
