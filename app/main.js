@@ -70,7 +70,7 @@ const echo = (args) => {
       console.log(args.slice(1).join(" "));
    }
 };
-const unexpected = (args) => {
+const unexpected = (args,command) => {
   // If the first argument is not "echo" or "exit", print an error message
   if (!builtins[command]) {
     const runnable = externalCommand(args);
@@ -141,7 +141,7 @@ const prompt=()=>{
     if (builtins[command]) {
       builtins[command](args);
     } else {
-      unexpected(args);
+      unexpected(args,command);
     }
     prompt();
   });
