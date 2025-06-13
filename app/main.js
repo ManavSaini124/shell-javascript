@@ -10,7 +10,17 @@ const rl = readline.createInterface({
 const builtins ={
   echo: (args)=>{
     if(args[0] == "echo"){
-      console.log(args.slice(1).join(" "));
+      const new_arg = args.slice(1).join(" ");
+      // const regex = /'([^']+)'/g; // just match single quotes
+      const regex = /^["']([^"']*)["']$/; // match double or single quotes
+      const match = regex.exec(new_arg);
+      if (match) {
+        const result = match[1];
+        console.log(result); 
+      }
+      else{
+        console.log(new_arg);
+      }
    }
   },
   exit:(args)=>{
@@ -78,6 +88,21 @@ const builtins ={
       process.chdir(dir);
     }
   },
+  // cat : (args)=>{
+  //   if(args[0] === "cat"){
+  //     if(args.length < 2) {
+  //       console.log("cat: missing argument");
+  //       return;
+  //     }
+  //     // Then it will also send a cat command, with the file name parameter enclosed in single quotes:
+  //     //$ cat '/tmp/file name' '/tmp/file name with spaces'
+  //     //content1 content2
+  //     //The tester will check if the cat command correctly prints the file content.
+  //     const filePath = args.slice(1).join(" ");
+
+
+  //   }
+  // }
 }
 
 const parting =(answer)=>{
