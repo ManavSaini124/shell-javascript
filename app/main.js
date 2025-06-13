@@ -154,18 +154,24 @@ function bashSplit(input) {
     const char = input[i];
 
     if (escape) {
-      current += char;
+      if (inDouble) {
+        switch (char) {
+          case 'n': current += '\n'; break;
+          case 't': current += '\t'; break;
+          case '\\': current += '\\'; break;
+          case '"': current += '"'; break;
+          case "'": current += "'"; break;
+          default: current += char; break; // unknown escapes
+        }
+      } else {
+        current += '\\' + char; // keep literal escape outside double quotes
+      }
       escape = false;
       continue;
     }
 
     if (char === '\\') {
-      if (inSingle) {
-        // literal backslash inside single quotes
-        current += '\\';
-      } else {
-        escape = true;
-      }
+      escape = true;
       continue;
     }
 
@@ -195,6 +201,7 @@ function bashSplit(input) {
 
   return args;
 }
+
 
 
 
