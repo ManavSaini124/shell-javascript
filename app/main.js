@@ -9,19 +9,52 @@ const rl = readline.createInterface({
 
 const builtins ={
   echo: (args)=>{
-    if(args[0] == "echo"){
+  //   if(args[0] == "echo"){
+    // const new_arg = args.slice(1).join(" ");
+    //     // const regex = /'([^']+)'/g; // just match single quotes
+    //     const regex = /^["']([^"']*)["']$/; // match double or single quotes
+    //     const match = regex.exec(new_arg);
+    //     if (match) {
+      //       const result = match[1];
+  //       console.log(result); 
+  //     }
+  //     else{
+    //       console.log(new_arg);
+    //     }
+    //  }
       const new_arg = args.slice(1).join(" ");
-      // const regex = /'([^']+)'/g; // just match single quotes
-      const regex = /^["']([^"']*)["']$/; // match double or single quotes
-      const match = regex.exec(new_arg);
-      if (match) {
-        const result = match[1];
-        console.log(result); 
+      const arg = [];
+      let current = '';
+      let inSingle = false;
+      let inDouble = false;
+      let escape = false;
+
+      for (let i = 0; i < new_arg.length; i++) {
+        const char = new_arg[i];
+
+        if (escape) {
+          current += char;
+          escape = false;
+        } else if (char === '\\') {
+          escape = true;
+        } else if (char === "'" && !inDouble) {
+          inSingle = !inSingle;
+        } else if (char === '"' && !inSingle) {
+          inDouble = !inDouble;
+        } else if (char === ' ' && !inSingle && !inDouble) {
+          if (current.length > 0) {
+            arg.push(current);
+            current = '';
+          }
+        } else {
+          current += char;
+        }
       }
-      else{
-        console.log(new_arg);
+
+      if (current.length > 0) {
+        arg.push(current);
       }
-   }
+      console.log(arg.join(" "));
   },
   exit:(args)=>{
     if (args[0] === "exit" && args[1] === "0") {
