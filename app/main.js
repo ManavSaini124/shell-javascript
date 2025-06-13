@@ -154,18 +154,24 @@ function bashSplit(input) {
     const char = input[i];
 
     if (escape) {
-      // Handle escape sequences in unquoted or double-quoted strings
       if (inSingle) {
-        current += '\\' + char;
+        current += '\\' + char; // literal inside single quotes
+      } else if (inDouble) {
+        if ('"\\$`'.includes(char)) {
+          current += char;
+        } else {
+          current += '\\' + char; // unrecognized escapes stay escaped
+        }
       } else {
+        // outside any quotes
         switch (char) {
           case 'n': current += '\n'; break;
           case 't': current += '\t'; break;
           case 'r': current += '\r'; break;
-          case '\\': current += '\\'; break;
-          case '"': current += '"'; break;
-          case "'": current += "'"; break;
           case ' ': current += ' '; break;
+          case '\\': current += '\\'; break;
+          case "'": current += "'"; break;
+          case '"': current += '"'; break;
           default: current += char; break;
         }
       }
