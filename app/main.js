@@ -148,9 +148,26 @@ function bashSplit(input) {
   let current = '';
   let inSingle = false;
   let inDouble = false;
+  let escape = false;
 
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
+
+    if (escape) {
+      current += char;
+      escape = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      if (inSingle) {
+        // literal backslash inside single quotes
+        current += '\\';
+      } else {
+        escape = true;
+      }
+      continue;
+    }
 
     if (char === "'" && !inDouble) {
       inSingle = !inSingle;
@@ -178,6 +195,7 @@ function bashSplit(input) {
 
   return args;
 }
+
 
 
 const externalCommand = (args) => {
