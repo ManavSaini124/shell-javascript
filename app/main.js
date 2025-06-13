@@ -22,39 +22,40 @@ const builtins ={
     //       console.log(new_arg);
     //     }
     //  }
-      const new_arg = args.slice(1).join(" ");
-      const arg = [];
-      let current = '';
-      let inSingle = false;
-      let inDouble = false;
-      let escape = false;
+      // const new_arg = args.slice(1).join(" ");
+      // const arg = [];
+      // let current = '';
+      // let inSingle = false;
+      // let inDouble = false;
+      // let escape = false;
 
-      for (let i = 0; i < new_arg.length; i++) {
-        const char = new_arg[i];
+      // for (let i = 0; i < new_arg.length; i++) {
+      //   const char = new_arg[i];
 
-        if (escape) {
-          current += char;
-          escape = false;
-        } else if (char === '\\') {
-          escape = true;
-        } else if (char === "'" && !inDouble) {
-          inSingle = !inSingle;
-        } else if (char === '"' && !inSingle) {
-          inDouble = !inDouble;
-        } else if (char === ' ' && !inSingle && !inDouble) {
-          if (current.length > 0) {
-            arg.push(current);
-            current = '';
-          }
-        } else {
-          current += char;
-        }
-      }
+      //   if (escape) {
+      //     current += char;
+      //     escape = false;
+      //   } else if (char === '\\') {
+      //     escape = true;
+      //   } else if (char === "'" && !inDouble) {
+      //     inSingle = !inSingle;
+      //   } else if (char === '"' && !inSingle) {
+      //     inDouble = !inDouble;
+      //   } else if (char === ' ' && !inSingle && !inDouble) {
+      //     if (current.length > 0) {
+      //       arg.push(current);
+      //       current = '';
+      //     }
+      //   } else {
+      //     current += char;
+      //   }
+      // }
 
-      if (current.length > 0) {
-        arg.push(current);
-      }
-      console.log(arg.join(" "));
+      // if (current.length > 0) {
+      //   arg.push(current);
+      // }
+      // console.log(arg);
+      console.log(args.slice(1).join(" "));
   },
   exit:(args)=>{
     if (args[0] === "exit" && args[1] === "0") {
@@ -121,42 +122,17 @@ const builtins ={
       process.chdir(dir);
     }
   },
-  // cat : (args)=>{
-  //   if(args[0] === "cat"){
-  //     if(args.length < 2) {
-  //       console.log("cat: missing argument");
-  //       return;
-  //     }
-  //     // Then it will also send a cat command, with the file name parameter enclosed in single quotes:
-  //     //$ cat '/tmp/file name' '/tmp/file name with spaces'
-  //     //content1 content2
-  //     //The tester will check if the cat command correctly prints the file content.
-  //     const filePath = args.slice(1).join(" ");
-
-
-  //   }
-  // }
 }
 
-const parting =(answer)=>{
-  answer = answer.trim();
-  const args = answer.split(" ");
-  return args;
-}
+const parting =(answer)=> bashSplit(answer);
 
-const exit = (args) => {
-  if (args[0] === "exit" && args[1] === "0") {
-    rl.close();
-    process.exit(0);
-  }
-};
 
-const echo = (args) => {
-  // Join the arguments with a space and print them
-   if(args[0] == "echo"){
-      console.log(args.slice(1).join(" "));
-   }
-};
+// const parting =(answer)=>{
+//   answer = answer.trim();
+//   const args = answer.split(" ");
+//   return args;
+// }
+
 const unexpected = (args,command) => {
   // If the first argument is not "echo" or "exit", print an error message
   if (!builtins[command]) {
@@ -167,31 +143,42 @@ const unexpected = (args,command) => {
   }
 };
 
-const type = (args) => {
-  const validCommands = ["echo", "exit", "type", "pwd"];
-  if(args[0] === "type"){
-    if(validCommands.includes(args[1])){
-      console.log(`${args[1]} is a shell builtin`);
+function bashSplit(input) {
+  const args = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if (char === "'" && !inDouble) {
+      inSingle = !inSingle;
+      continue;
     }
-    else{
-      if (args.length < 2) {
-        console.log("type: missing argument");
-        return;
+
+    if (char === '"' && !inSingle) {
+      inDouble = !inDouble;
+      continue;
+    }
+
+    if (char === ' ' && !inSingle && !inDouble) {
+      if (current.length > 0) {
+        args.push(current);
+        current = '';
       }
-      
-      // access the PATH environment variable to find the command
-      const dirs = process.env.PATH.split(':');
-      for( const dir in dirs){
-        const filePath = `${dirs[dir]}/${args[1]}`;
-        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-          console.log(`${args[1]} is ${filePath}`);
-          return;
-        }
-      }
-      console.log(`${args[1]}: not found`);
+    } else {
+      current += char;
     }
   }
+
+  if (current.length > 0) {
+    args.push(current);
+  }
+
+  return args;
 }
+
 
 const externalCommand = (args) => {
   if(args.length > 1){
