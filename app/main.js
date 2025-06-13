@@ -109,20 +109,22 @@ const type = (args) => {
 const externalCommand = (args) => {
   if(args.length > 1){
     const command_args = args.slice(1);
-    spawnSync(args[0], command_args, {
-      stdio: 'inherit',
-      encoding: 'utf8',
-    });
-  // const command = args[0];
-  // const paths = process.env.PATH.split(":");
+    // spawnSync(args[0], command_args, {
+    //   stdio: 'inherit',
+    //   encoding: 'utf8',
+    // });
+    const command = args[0];
+    const paths = process.env.PATH.split(":");
 
-  // for (const dir of paths) {
-  //   const fullPath = `${dir}/${command}`;
-  //   if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-  //     const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
-      return 1;
+    for (const dir of paths) {
+      const fullPath = `${dir}/${command}`;
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
+        return 1;
+      }
     }
-  return 0;
+    return 0;
+  }
 }
 
 const pwd = (args) => {
