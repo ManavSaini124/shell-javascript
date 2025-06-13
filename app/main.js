@@ -155,25 +155,18 @@ function bashSplit(input) {
 
     if (escape) {
       if (inSingle) {
-        current += '\\' + char; // literal inside single quotes
+        // backslashes are literal inside single quotes
+        current += '\\' + char;
       } else if (inDouble) {
+        // only ", \, $, ` are escapable in double quotes
         if ('"\\$`'.includes(char)) {
           current += char;
         } else {
-          current += '\\' + char; // unrecognized escapes stay escaped
+          current += '\\' + char;
         }
       } else {
-        // outside any quotes
-        switch (char) {
-          case 'n': current += '\n'; break;
-          case 't': current += '\t'; break;
-          case 'r': current += '\r'; break;
-          case ' ': current += ' '; break;
-          case '\\': current += '\\'; break;
-          case "'": current += "'"; break;
-          case '"': current += '"'; break;
-          default: current += char; break;
-        }
+        // outside quotes, just escape next char
+        current += char;
       }
       escape = false;
       continue;
