@@ -56,6 +56,16 @@ const builtins ={
         console.log("cd: missing argument");
         return;
       }
+      if( args[1] === "~"){
+        const homeDir = process.env.HOME || process.env.USERPROFILE;
+        if (homeDir) {
+          process.chdir(homeDir);
+          return;
+        } else {
+          console.log("cd: HOME not set");
+          return;
+        }
+      }
       const dir = args.slice(1).join(" ");
       if (!fs.existsSync(dir)) {
         console.log(`cd: ${dir}: No such file or directory`);
