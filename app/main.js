@@ -1,6 +1,6 @@
 const readline = require("readline");
 const fs = require("fs");
-const {spawn, spawnSync} = require("child_process");
+const {spawnSync} = require("child_process");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -48,7 +48,26 @@ const builtins ={
     if (args[0] === "pwd") {
       console.log(process.cwd());
     }
-  }
+  },
+  cd : (args) => {
+    if(args[0] === "cd"){
+      // Check if the directory exists
+      if(args.slice(1).length === 0){
+        console.log("cd: missing argument");
+        return;
+      }
+      const dir = args.slice(1).join(" ");
+      if (!fs.existsSync(dir)) {
+        console.log(`cd: ${dir}: No such file or directory`);
+        return;
+      }
+      if (!fs.statSync(dir).isDirectory()) {
+        console.log(`cd: ${dir}: Not a directory`);
+        return;
+      }
+      process.chdir(dir);
+    }
+  },
 }
 
 const parting =(answer)=>{
