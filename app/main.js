@@ -3,7 +3,7 @@ const fs = require("fs");
 const {spawnSync} = require("child_process");
 const path = require("path");
 
-const builtinCommands = ["echo ", "exit", "type", "pwd", "cd"];
+const builtinCommands = ["echo", "exit", "type", "pwd", "cd"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
@@ -118,7 +118,9 @@ const completer = (line) => {
   } else if (hits.length === 1) {
     // Single match - autocomplete
     lastCompletion.count = 0;
-    // console.log(`Autocomplete: ${hits[0] + " "}+++`);
+    if(hits[0] === "echo"){
+      console.log(`${hits[0] + " "}: missing argument`);
+    }
     return [[hits[0] + " "], trimmedLine];
   }else{
 
