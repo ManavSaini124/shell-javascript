@@ -41,6 +41,7 @@ const completer = (line) => {
   
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
+  console.log("allCommands = ", allCommands);
   const hits = allCommands.filter(cmd => cmd.startsWith(line));
   if (hits.length === 1) {
     return [[hits[0] + " "], hits[0] + " "];  // <-- autocomplete
