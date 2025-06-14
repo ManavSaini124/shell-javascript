@@ -156,8 +156,28 @@ const unexpected = (args,command) => {
     }
   }
 };
+// const externalCommand = (args) => {
+//   if(args.length > 1){
+//     const command_args = args.slice(1);
+//     // spawnSync(args[0], command_args, {
+//     //   stdio: 'inherit',
+//     //   encoding: 'utf8',
+//     // });
+//     const command = args[0];
+//     const paths = process.env.PATH.split(":");
 
+//     for (const dir of paths) {
+//       const fullPath = `${dir}/${command}`;
+//       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+//         const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
+//         return 1;
+//       }
+//     }
+//     return 0;
+//   }
+// }
 const externalCommand = (args) => {
+  
   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
   let commandArgs = args;
   let outputFile = null;
@@ -300,25 +320,20 @@ const pwd = (args) => {
 const prompt = () => {
   rl.question("$ ", (answer) => {
     const args = parting(answer);
-    
-    withRedirection(args, (commandArgs) => {
-      const command = commandArgs[0];
-      if (!command) {
-        prompt();
-        return;
-      }
+    const command = args[0];
 
-      if (builtins[command]) {
-        builtins[command](commandArgs);
+    withRedirection(args, (commandArgs) => {
+      if (builtins[commandArgs[0]]) {
+        builtins[commandArgs[0]](commandArgs);
       } else {
-        const ok = externalCommand(commandArgs);
-        if (!ok) {
-          console.error(`${command}: command not found`);
+        const result = externalCommand(commandArgs);
+        if (!result) {
+          console.log(`${commandArgs[0]}: command not found`);
         }
       }
-
-      prompt();
     });
+
+    prompt();
   });
 };
 
