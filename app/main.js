@@ -79,6 +79,9 @@ let tabPressCount = 0;
 //   // return [hits.length ? hits.map(h => h + " ") : [], line];
 // };
 
+let lastToken = "";
+// let tabPressCount = 0;
+
 const completer = (line) => {
   const words = line.split(/\s+/);
   const current = words[words.length - 1] || "";
