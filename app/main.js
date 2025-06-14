@@ -55,7 +55,7 @@ const completer = (line) => {
     tabPressCount = 0;
     const completed = hits[0] + " ";
     lastLine = completed;
-    return [[completed], completed];  // <-- corrected
+    return [[hits[0] + " "], line];  // <-- corrected
 
 
   } else if (hits.length > 1) {
@@ -78,9 +78,11 @@ const completer = (line) => {
   }
   // return [hits.length ? hits.map(h => h + " ") : [], line];
 };
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+  prompt: '$ ',
   completer: completer,
 });
 
