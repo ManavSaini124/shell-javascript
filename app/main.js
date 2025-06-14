@@ -1,6 +1,6 @@
 const readline = require("readline");
 const fs = require("fs");
-const {spawnSync} = require("child_process");
+const {spawnSync, spawn} = require("child_process");
 const path = require("path");
 
 const builtinCommands = ["echo", "exit", "type", "pwd", "cd"];
@@ -554,6 +554,7 @@ rl.on('line', (input) => {
     rl.prompt();
     return;
   }
+  
 
   // Check for pipeline
   if (input.includes('|')) {
