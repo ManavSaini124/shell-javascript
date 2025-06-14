@@ -1,8 +1,8 @@
 # 🐚 Custom Shell
 A fully-featured, interactive shell built from scratch in Node.js that mimics the behavior of popular Unix shells like Bash. This project demonstrates advanced systems programming concepts including process management, I/O redirection, and command-line parsing.
 
-![My Screenshot](app/assess/Screenshot%202025-06-14%20233348.png.png)
-
+<!-- https://backend.codecrafters.io/progress/shell/818f2788-f817-4bff-aae4-d09fd0bba289 -->
+<img src="(https://backend.codecrafters.io/progress/shell/818f2788-f817-4bff-aae4-d09fd0bba289)"/>
 
 ## ✨ Features
 
