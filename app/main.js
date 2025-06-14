@@ -5,8 +5,35 @@ const path = require("path");
 
 const builtinCommands = ["echo", "exit"];
 
+const getExternalExecutables = () => {
+  const path = process.env.PATH.split(':');
+  const Executables = new Set();
+  for( const dir in path){
+    try{
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        try{
+          const stats = fs.statSync(filePath);
+          if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK)) {
+            Executables.add(file);
+          }
+        }catch (err) {
+          // Ignore errors for files that cannot be accessed
+          console.error(`Error accessing file ${filePath}: ${err.message}`);
+        }
+    }
+  }catch (err) {
+      // Ignore directories that cannot be read
+      console.error(`Error reading directory ${dir}: ${err.message}`);
+    }
+  }
+}
+
 const completer = (line) => {
-  const hits = builtinCommands.filter(cmd => cmd.startsWith(line));
+  // Get all commands including builtins and external executables
+  const allCommands = [...builtinCommands, ...getExternalExecutables()];
+  const hits = allCommands.filter(cmd => cmd.startsWith(line));
   if (hits.length > 0) {
     // If there are hits, return them with a space at the end
     return [hits.map(h => h + " "), line];
