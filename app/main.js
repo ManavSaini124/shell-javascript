@@ -184,7 +184,8 @@ const externalCommand = (args) => {
           encoding: "utf8",
           stdio: outputFile
             ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
-            : 'inherit'
+            : 'inherit',
+          argv0: command,
         };
 
         // ✅ Call the resolved path
