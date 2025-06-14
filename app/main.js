@@ -317,6 +317,36 @@ const builtins ={
   },
   history: (args) => {
     if (args[0] === "history") {
+      // for reading ($ history -w <path_to_history_file>)
+      if( args.length >= 3 && args[1] ==="-r"){
+        const historyFilePath = args[2];
+        try{
+          if (fs.existsSync(historyFilePath)) {
+            const fileContent = fs.readFileSync(historyFilePath, 'utf8');
+            const lines = fileContent.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0); 
+            commandHistory.push(...lines);
+          } else {
+            console.log(`history: ${historyFilePath}: No such file`);
+          }
+          return;
+        }catch (err) {
+          console.log(`history: ${historyFilePath}: ${err.message}`);
+          return;
+        }
+      }
+      // for writing ($ history -w <path_to_history_file>)
+      if( args.length >= 3 && args[1] ==="-w"){
+        const historyFilePath = args[2];
+        try{
+          fs.writeFileSync(historyFilePath, commandHistory.join('\n') + '\n', 'utf8');
+          // console.log(`history: ${historyFilePath}: written`);
+        }catch (err) {
+          console.log(`history: ${historyFilePath}: ${err.message}`);
+        }
+        return;
+      }
       let numToShow = commandHistory.length;
       if(args.length > 1){
         const numArg = parseInt(args[1], 10);
@@ -327,11 +357,11 @@ const builtins ={
           return;
         }
       }
-
       const startIndex = Math.max(0, commandHistory.length - numToShow);
       for (let i = startIndex; i < commandHistory.length; i++) {
         console.log(`    ${i + 1}  ${commandHistory[i]}`);
       }
+
     }
   }
 
@@ -632,39 +662,71 @@ rl.on('line', (input) => {
       if (builtins[cmd]) {
         // Create a simple Node process for built-ins
       const script = `
-        const fs = require('fs');
-        const args = ${JSON.stringify(args)};
-        const cmd = args[0];
-        
-        if (cmd === 'type') {
-          const builtins = ['echo', 'exit', 'type', 'pwd', 'cd', 'history'];
-          const target = args[1];
-          if (builtins.includes(target)) {
-            console.log(target + ' is a shell builtin');
-          } else {
-            console.log(target + ': not found');
-          }
-        } else if (cmd === 'echo') {
-          console.log(args.slice(1).join(' '));
-        } else if (cmd === 'pwd') {
-          console.log(process.cwd());
-        } else if (cmd === 'history') {
-          const history = ${JSON.stringify(commandHistory)};
-          let numToShow = history.length;
+          const fs = require('fs');
+          const args = ${JSON.stringify(args)};
+          const cmd = args[0];
           
-          if (args.length > 1) {
-            const n = parseInt(args[1]);
-            if (!isNaN(n) && n > 0) {
-              numToShow = Math.min(n, history.length);
+          if (cmd === 'type') {
+            const builtins = ['echo', 'exit', 'type', 'pwd', 'cd', 'history'];
+            const target = args[1];
+            if (builtins.includes(target)) {
+              console.log(target + ' is a shell builtin');
+            } else {
+              console.log(target + ': not found');
+            }
+          } else if (cmd === 'echo') {
+            console.log(args.slice(1).join(' '));
+          } else if (cmd === 'pwd') {
+            console.log(process.cwd());
+          } else if (cmd === 'history') {
+            const history = ${JSON.stringify(commandHistory)};
+            
+            // Handle -r flag (read from file)
+            if (args.length >= 3 && args[1] === '-r') {
+              const filePath = args[2];
+              try {
+                if (fs.existsSync(filePath)) {
+                  const fileContent = fs.readFileSync(filePath, 'utf8');
+                  const lines = fileContent.split('\\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                  // Note: In pipeline, we can't modify the parent's commandHistory
+                  console.log('history: read operation completed');
+                }
+              } catch (err) {
+                console.log('history: cannot read ' + filePath + ': ' + err.message);
+              }
+              return;
+            }
+            
+            // Handle -w flag (write to file)
+            if (args.length >= 3 && args[1] === '-w') {
+              const filePath = args[2];
+              try {
+                const historyContent = history.join('\\n') + '\\n';
+                fs.writeFileSync(filePath, historyContent, 'utf8');
+              } catch (err) {
+                console.log('history: cannot write ' + filePath + ': ' + err.message);
+              }
+              return;
+            }
+            
+            // Regular history display
+            let numToShow = history.length;
+            
+            if (args.length > 1) {
+              const n = parseInt(args[1]);
+              if (!isNaN(n) && n > 0) {
+                numToShow = Math.min(n, history.length);
+              }
+            }
+            
+            const startIndex = Math.max(0, history.length - numToShow);
+            for (let i = startIndex; i < history.length; i++) {
+              console.log('    ' + (i + 1) + '  ' + history[i]);
             }
           }
-          
-          const startIndex = Math.max(0, history.length - numToShow);
-          for (let i = startIndex; i < history.length; i++) {
-            console.log('    ' + (i + 1) + '  ' + history[i]);
-          }
-        }
-      `;
+        `;
         proc = spawn('node', ['-e', script], options);
       } else {
         proc = spawn(execPath, cmdArgs, options);
