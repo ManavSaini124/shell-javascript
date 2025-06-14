@@ -13,7 +13,7 @@ const getExternalExecutables = () => {
   for(const dir of path_dir){
     try{
       const files = fs.readdirSync(dir);
-      // console.log("files = ",files);
+      console.log("files = ",files);
       for (const file of files) {
         // console.log("file = ",file);
         const filePath = path.join(dir, file);
