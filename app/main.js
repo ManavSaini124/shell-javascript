@@ -15,7 +15,7 @@ const getExternalExecutables = () => {
         const filePath = path.join(dir, file);
         try{
           const stats = fs.statSync(filePath);
-          if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK)) {
+          if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK) === undefined) {
             Executables.add(file);
           }
         }catch (err) {
