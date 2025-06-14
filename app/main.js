@@ -347,6 +347,18 @@ const builtins ={
         }
         return;
       }
+
+      if (args.length >= 3 && args[1] === "-a") {
+        const filePath = args[2];
+        try {
+          const historyContent = commandHistory.join('\n') + '\n';
+          fs.appendFileSync(filePath, historyContent, 'utf8');
+        } catch (err) {
+          console.log(`history: cannot append to ${filePath}: ${err.message}`);
+        }
+        return;
+      }
+
       let numToShow = commandHistory.length;
       if(args.length > 1){
         const numArg = parseInt(args[1], 10);
@@ -696,13 +708,22 @@ rl.on('line', (input) => {
               console.log('history: cannot read ' + filePath + ': ' + err.message);
             }
           } else if (args.length >= 3 && args[1] === '-w') {
-            // Handle -w flag (write to file)
+            // Handle -w flag (write to file - overwrites)
             const filePath = args[2];
             try {
               const historyContent = history.join('\\n') + '\\n';
               fs.writeFileSync(filePath, historyContent, 'utf8');
             } catch (err) {
               console.log('history: cannot write ' + filePath + ': ' + err.message);
+            }
+          } else if (args.length >= 3 && args[1] === '-a') {
+            // Handle -a flag (append to file)
+            const filePath = args[2];
+            try {
+              const historyContent = history.join('\\n') + '\\n';
+              fs.appendFileSync(filePath, historyContent, 'utf8');
+            } catch (err) {
+              console.log('history: cannot append to ' + filePath + ': ' + err.message);
             }
           } else {
             // Regular history display
