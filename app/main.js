@@ -37,19 +37,37 @@ const getExternalExecutables = () => {
   return [...Executables];
 }
 
+let lastLine = "";
+let tabPressCount = 0;
+
 const completer = (line) => {
-  
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
   // console.log("allCommands = ", allCommands);
   const hits = allCommands.filter(cmd => cmd.startsWith(line));
+  if(line !== lastLine){
+    tabPressCount = 0; // Reset tab press count if line changes
+    lastLine = line;
+  }
   if (hits.length === 1) {
+    tabPressCount = 0;
     return [[hits[0] + " "], line];  // <-- autocomplete
   } else if (hits.length > 1) {
-    return [hits.map(h => h + " "), line];    // <-- multiple suggestions
+    tabPressCount++;
+    if (tabPressCount === 1) {
+      process.stdout.write("\x07");
+    }
+    else if( tabPressCount === 2){
+      process.stdout.write(hits.join("  ") + "\n");
+      process.stdout.write(`$ ${line}`);
+
+    }
+    // return [hits.map(h => h + " "), line];    // <-- multiple suggestions
+    return [[], line]; // Keep the input unchanged
   }
   else{
     process.stdout.write("\x07");
+    tabPressCount = 0; // Reset tab press count if no matches
     return [[], line]; // Keep the input unchanged
   }
   // return [hits.length ? hits.map(h => h + " ") : [], line];
