@@ -7,6 +7,8 @@ const builtinCommands = ["echo", "exit"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
+  console.log("path_dir = ", path_dir);
+  
   const Executables = new Set();
   for(const dir of path_dir){
     try{
