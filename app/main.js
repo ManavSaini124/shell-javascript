@@ -118,6 +118,7 @@ const completer = (line) => {
   } else if (hits.length === 1) {
     // Single match - autocomplete
     lastCompletion.count = 0;
+    console.log(`Autocomplete: ${hits[0] + " "}+++`);
     return [[hits[0] + " "], trimmedLine];
   }else{
 
