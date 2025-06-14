@@ -157,49 +157,46 @@ function bashSplit(input) {
 
 
 const externalCommand = (args) => {
-  if(args.length > 1){
-    // const command_args = args.slice(1);
-    // we have to implement Redirect stdout
-    // dectecting >, 1>
-    const indexOfRedirect = args.findIndex(arg => arg === '>' || arg === '1>');
-    if (indexOfRedirect !== -1 && !args[indexOfRedirect + 1]) {
-      console.log("Redirection error: no file specified");
+  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
+  let commandArgs = args;
+  let outputFile = null;
+
+  if (redirectIndex !== -1) {
+    if (!args[redirectIndex + 1]) {
+      console.log("Redirection error: no output file specified");
       return 0;
     }
+    outputFile = args[redirectIndex + 1];
+    commandArgs = args.slice(0, redirectIndex);
+  }
 
-    let commandArgs = args[0];
-    let output_file = null;
-    if (indexOfRedirect !== -1) {
-      output_file = args[indexOfRedirect + 1];
-      if (!output_file) {
-        console.log(`bash: ${commandArgs}: missing argument`);
-        return 0;
-      }
-      commandArgs = args.slice(0, indexOfRedirect).join(" ");
-    }
+  if (commandArgs.length === 0) return 0;
 
-    if (commandArgs.length === 0) return 0;
+  const command = commandArgs[0];
+  const commandArguments = commandArgs.slice(1);
+  const paths = process.env.PATH.split(":");
 
-
-
-    const command = commandArgs[0];
-    const commandArguments = commandArgs.slice(1);
-    const paths = process.env.PATH.split(":");
-
-    for (const dir of paths) {
-      const fullPath = `${dir}/${command}`;
+  for (const dir of paths) {
+    const fullPath = `${dir}/${command}`;
+    
       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-        const option ={
+        const options = {
           encoding: "utf8",
-          stdio: output_file ?['inherit', fs.openSync(outputFile, 'w'), 'inherit']: 'inherit',
-        }
-        spawnSync(fullPath, commandArguments, option);
+          stdio: outputFile
+            ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
+            : 'inherit'
+        };
+
+        // ✅ Call the resolved path
+        spawnSync(fullPath, commandArguments, options);
         return 1;
       }
-    }
-    return 0;
+    
   }
-}
+
+  return 0;
+};
+
 
 const pwd = (args) => {
   if (args[0] === "pwd") {
