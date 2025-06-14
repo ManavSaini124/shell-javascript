@@ -238,6 +238,7 @@ const rl = readline.createInterface({
 });
 
 const commandHistory = [];
+const historyFilePositions = new Map(); // Track positions for -a flag
 
 const builtins ={
   echo: (args)=>{
@@ -351,13 +352,24 @@ const builtins ={
       if (args.length >= 3 && args[1] === "-a") {
         const filePath = args[2];
         try {
-          const historyContent = commandHistory.join('\n') + '\n';
-          fs.appendFileSync(filePath, historyContent, 'utf8');
+          // Get the last position we wrote to this file
+          const lastPosition = historyFilePositions.get(filePath) || 0;
+          
+          // Only append commands since the last position
+          const newCommands = commandHistory.slice(lastPosition);
+          if (newCommands.length > 0) {
+            const historyContent = newCommands.join('\n') + '\n';
+            fs.appendFileSync(filePath, historyContent, 'utf8');
+          }
+          
+          // Update the position for this file
+          historyFilePositions.set(filePath, commandHistory.length);
         } catch (err) {
           console.log(`history: cannot append to ${filePath}: ${err.message}`);
         }
         return;
       }
+
 
       let numToShow = commandHistory.length;
       if(args.length > 1){
