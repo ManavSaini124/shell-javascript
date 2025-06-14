@@ -37,8 +37,8 @@ const getExternalExecutables = () => {
   return [...Executables];
 }
 
-let lastLine = "";
-let tabPressCount = 0;
+// let lastLine = "";
+// let tabPressCount = 0;
 
 // const completer = (line) => {
 //   // Get all commands including builtins and external executables
@@ -79,13 +79,27 @@ let tabPressCount = 0;
 //   // return [hits.length ? hits.map(h => h + " ") : [], line];
 // };
 
-let lastToken = "";
+// let lastToken = "";
 // let tabPressCount = 0;
 
-const completer = (line) => {
-  const words = line.split(/\s+/);
-  const current = words[words.length - 1] || "";
+const getLongestCommonPrefix = (arr) => {
+  if (!arr.length) return "";
+  let prefix = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    while (!arr[i].startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+      if (!prefix) return "";
+    }
+  }
+  return prefix;
+};
 
+let lastToken = "";
+let tabPressCount = 0;
+
+const completer = (line) => {
+  const tokens = line.split(/\s+/);
+  const current = tokens[tokens.length - 1] || "";
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
   const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
 
@@ -96,26 +110,70 @@ const completer = (line) => {
 
   if (matches.length === 1) {
     tabPressCount = 0;
-    const completed = matches[0];
+    const completed = matches[0] + ' ';
     lastToken = completed;
-    return [[matches[0] + " "], current]; // ✅ return suggestion and matched prefix
-  }
-  
-  if (matches.length > 1) {
-    tabPressCount++;
-    if (tabPressCount === 1) {
-      process.stdout.write("\x07");
-    } else if (tabPressCount === 2) {
-      process.stdout.write("\n" + matches.join("  ") + "\n");
-      rl.prompt(true);
-    }
-    return [[], current];
+    return [[completed], current];
   }
 
-  process.stdout.write("\x07");
+  if (matches.length > 1) {
+    const lcp = getLongestCommonPrefix(matches);
+    if (lcp.length > current.length) {
+      lastToken = lcp;
+      tabPressCount = 0;
+      return [[lcp], current];
+    } else {
+      tabPressCount++;
+      if (tabPressCount === 1) {
+        process.stdout.write('\x07'); // bell
+      } else if (tabPressCount === 2) {
+        process.stdout.write('\n' + matches.join('  ') + '\n');
+        rl.prompt(true);
+      }
+      return [[], current];
+    }
+  }
+
+  process.stdout.write('\x07'); // bell for no match
   tabPressCount = 0;
   return [[], current];
 };
+
+
+
+// const completer = (line) => {
+//   const words = line.split(/\s+/);
+//   const current = words[words.length - 1] || "";
+
+//   const allCommands = [...builtinCommands, ...getExternalExecutables()];
+//   const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
+
+//   if (current !== lastToken) {
+//     tabPressCount = 0;
+//     lastToken = current;
+//   }
+
+//   if (matches.length === 1) {
+//     tabPressCount = 0;
+//     const completed = matches[0];
+//     lastToken = completed;
+//     return [[matches[0] + " "], current]; // ✅ return suggestion and matched prefix
+//   }
+  
+//   if (matches.length > 1) {
+//     tabPressCount++;
+//     if (tabPressCount === 1) {
+//       process.stdout.write("\x07");
+//     } else if (tabPressCount === 2) {
+//       process.stdout.write("\n" + matches.join("  ") + "\n");
+//       rl.prompt(true);
+//     }
+//     return [[], current];
+//   }
+
+//   process.stdout.write("\x07");
+//   tabPressCount = 0;
+//   return [[], current];
+// };
 
 
 const rl = readline.createInterface({
