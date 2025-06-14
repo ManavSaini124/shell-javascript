@@ -162,11 +162,11 @@ const externalCommand = (args) => {
     // we have to implement Redirect stdout
     // dectecting >, 1>
     const indexOfRedirect = args.findIndex(arg => arg === '>' || arg === '1>');
-    if (redirectIndex !== -1 && !args[redirectIndex + 1]) {
+    if (indexOfRedirect !== -1 && !args[indexOfRedirect + 1]) {
       console.log("Redirection error: no file specified");
       return 0;
     }
-    
+
     const commandArgs = args[0];
     const output_file = null;
     if (indexOfRedirect !== -1) {
