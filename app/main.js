@@ -3,7 +3,7 @@ const fs = require("fs");
 const {spawnSync} = require("child_process");
 const path = require("path");
 
-const builtinCommands = ["echo", "exit", "type", "pwd", "cd"];
+const builtinCommands = ["echo ", "exit", "type", "pwd", "cd"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
