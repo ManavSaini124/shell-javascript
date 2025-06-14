@@ -317,7 +317,19 @@ const builtins ={
   },
   history: (args) => {
     if (args[0] === "history") {
-      for (let i = 0; i < commandHistory.length; i++) {
+      let numToShow = commandHistory.length;
+      if(args.length > 1){
+        const numArg = parseInt(args[1], 10);
+        if (!isNaN(numArg) && numArg > 0) {
+          numToShow = Math.min(numArg, commandHistory.length);
+        } else {
+          console.log(`history: ${args[1]}: invalid number`);
+          return;
+        }
+      }
+
+      const startIndex = Math.max(0, commandHistory.length - numToShow);
+      for (let i = startIndex; i < commandHistory.length; i++) {
         console.log(`    ${i + 1}  ${commandHistory[i]}`);
       }
     }
@@ -619,30 +631,40 @@ rl.on('line', (input) => {
       let proc;
       if (builtins[cmd]) {
         // Create a simple Node process for built-ins
-        const script = `
-          const fs = require('fs');
-          const args = ${JSON.stringify(args)};
-          const cmd = args[0];
+      const script = `
+        const fs = require('fs');
+        const args = ${JSON.stringify(args)};
+        const cmd = args[0];
+        
+        if (cmd === 'type') {
+          const builtins = ['echo', 'exit', 'type', 'pwd', 'cd', 'history'];
+          const target = args[1];
+          if (builtins.includes(target)) {
+            console.log(target + ' is a shell builtin');
+          } else {
+            console.log(target + ': not found');
+          }
+        } else if (cmd === 'echo') {
+          console.log(args.slice(1).join(' '));
+        } else if (cmd === 'pwd') {
+          console.log(process.cwd());
+        } else if (cmd === 'history') {
+          const history = ${JSON.stringify(commandHistory)};
+          let numToShow = history.length;
           
-          if (cmd === 'type') {
-            const builtins = ['echo', 'exit', 'type', 'pwd', 'cd', 'history'];
-            const target = args[1];
-            if (builtins.includes(target)) {
-              console.log(target + ' is a shell builtin');
-            } else {
-              console.log(target + ': not found');
-            }
-          } else if (cmd === 'echo') {
-            console.log(args.slice(1).join(' '));
-          } else if (cmd === 'pwd') {
-            console.log(process.cwd());
-          } else if (cmd === 'history') {
-            const history = ${JSON.stringify(commandHistory)};
-            for (let i = 0; i < history.length; i++) {
-              console.log('    ' + (i + 1) + '  ' + history[i]);
+          if (args.length > 1) {
+            const n = parseInt(args[1]);
+            if (!isNaN(n) && n > 0) {
+              numToShow = Math.min(n, history.length);
             }
           }
-        `;
+          
+          const startIndex = Math.max(0, history.length - numToShow);
+          for (let i = startIndex; i < history.length; i++) {
+            console.log('    ' + (i + 1) + '  ' + history[i]);
+          }
+        }
+      `;
         proc = spawn('node', ['-e', script], options);
       } else {
         proc = spawn(execPath, cmdArgs, options);
