@@ -197,6 +197,39 @@ const externalCommand = (args) => {
   return 0;
 };
 
+const withRedirection =(args, callback) => {
+  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
+  let outputFile = null;
+  let commandArgs = args;
+
+  if (redirectIndex !== -1) {
+    outputFile = args[redirectIndex + 1];
+    commandArgs = args.slice(0, redirectIndex);
+  }
+
+  // Redirect stdout if needed
+  const originalWrite = process.stdout.write;
+  if (outputFile) {
+    try {
+      const fd = fs.openSync(outputFile, 'w');
+      process.stdout.write = (chunk, encoding, callbackWrite) => {
+        fs.writeSync(fd, chunk);
+        if (callbackWrite) callbackWrite();
+      };
+    } catch (err) {
+      console.log(`Redirection error: ${err.message}`);
+      return;
+    }
+  }
+
+  // Execute the actual command logic
+  callback(commandArgs);
+
+  // Restore stdout
+  if (outputFile) {
+    process.stdout.write = originalWrite;
+  }
+}
 
 const pwd = (args) => {
   if (args[0] === "pwd") {
@@ -209,11 +242,13 @@ const prompt=()=>{
     const args =parting (answer);
     const command = args[0];
 
-    if (builtins[command]) {
-      builtins[command](args);
-    } else {
-      unexpected(args,command);
-    }
+    withRedirection(args, (commandArgs) => {
+      if (builtins[commandArgs[0]]) {
+        builtins[commandArgs[0]](commandArgs);
+      } else {
+        unexpected(commandArgs, commandArgs[0]);
+      }
+    });
     prompt();
   });
 }
