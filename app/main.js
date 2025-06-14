@@ -119,7 +119,7 @@ const completer = (line) => {
     // Single match - autocomplete
     lastCompletion.count = 0;
     if(hits[0] === "echo"){
-      console.log(`${hits[0] + " "}: missing argument`);
+      // console.log(`\n${[hits[0] + " "]}: missing argument`);
     }
     return [[hits[0] + " "], trimmedLine];
   }else{
@@ -549,22 +549,52 @@ const pwd = (args) => {
 rl.prompt();
 
 rl.on('line', (input) => {
-  const args = parting(input.trim());
-  
-  if (args.length === 0) {
+  input = input.trim();
+  if (!input) {
     rl.prompt();
     return;
   }
 
+  // Check for pipeline
+  if (input.includes('|')) {
+    const [left, right] = input.split('|').map(s => s.trim());
+
+    const leftArgs = parting(left);
+    const rightArgs = parting(right);
+
+    if (leftArgs.length === 0 || rightArgs.length === 0) {
+      console.log('Invalid pipeline');
+      rl.prompt();
+      return;
+    }
+
+    const { spawn } = require('child_process');
+
+    const leftCmd = leftArgs[0];
+    const rightCmd = rightArgs[0];
+
+    const leftProcess = spawn(leftCmd, leftArgs.slice(1), { stdio: ['inherit', 'pipe', 'inherit'] });
+    const rightProcess = spawn(rightCmd, rightArgs.slice(1), { stdio: ['pipe', 'inherit', 'inherit'] });
+
+    leftProcess.stdout.pipe(rightProcess.stdin);
+
+    // Wait for both processes to exit
+    rightProcess.on('close', () => {
+      rl.prompt();
+    });
+
+    return;
+  }
+
+  // Handle normal (non-pipeline) command
+  const args = parting(input);
   const command = args[0];
 
-  // Handle exit command specially
-  if (command === 'exit') {
-    if (args[1] === '0' || args.length === 1) {
-      rl.close();
-      process.exit(0);
-    }
+  if (command === 'exit' && (args[1] === '0' || args.length === 1)) {
+    rl.close();
+    process.exit(0);
   }
+
 
   withRedirection(args, (commandArgs) => {
     if (builtins[commandArgs[0]]) {
