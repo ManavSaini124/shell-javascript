@@ -28,10 +28,11 @@ const getExternalExecutables = () => {
       // console.error(`Error reading directory ${dir}: ${err.message}`);
     }
   }
-  return [...executables];
+  return [...Executables];
 }
 
 const completer = (line) => {
+  
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
   const hits = allCommands.filter(cmd => cmd.startsWith(line));
