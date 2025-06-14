@@ -560,7 +560,6 @@ rl.on('line', (input) => {
   if (input.includes('|')) {
     const pipelineParts = input.split('|').map(s => s.trim());
     const processes = [];
-
     let prevStdout = null;
 
     for (let i = 0; i < pipelineParts.length; i++) {
@@ -572,13 +571,43 @@ rl.on('line', (input) => {
 
       const options = {
         stdio: [
-          prevStdout ? 'pipe' : 'inherit',  // stdin from previous if not first
-          i === pipelineParts.length - 1 ? 'inherit' : 'pipe',  // stdout to next unless last
+          prevStdout ? 'pipe' : 'inherit',
+          i === pipelineParts.length - 1 ? 'inherit' : 'pipe',
           'inherit'
         ]
       };
 
-      const proc = spawn(cmd, cmdArgs, options);
+      let proc;
+
+      // Handle built-in commands by creating a Node.js subprocess
+      if (builtins[cmd]) {
+        const builtinScript = `
+          const args = ${JSON.stringify(args)};
+          if (args[0] === 'echo') {
+            console.log(args.slice(1).join(' '));
+          } else if (args[0] === 'pwd') {
+            console.log(process.cwd());
+          } else if (args[0] === 'cd') {
+            // cd doesn't output anything, just exit
+            process.exit(0);
+          }
+        `;
+        proc = spawn('node', ['-e', builtinScript], options);
+      } else {
+        // External command - find full path
+        const paths = process.env.PATH.split(':');
+        let fullPath = cmd;
+        
+        for (const dir of paths) {
+          const testPath = `${dir}/${cmd}`;
+          if (fs.existsSync(testPath) && fs.statSync(testPath).isFile()) {
+            fullPath = testPath;
+            break;
+          }
+        }
+        
+        proc = spawn(fullPath, cmdArgs, options);
+      }
 
       if (prevStdout) {
         prevStdout.pipe(proc.stdin);
@@ -599,6 +628,7 @@ rl.on('line', (input) => {
     Promise.all(promises).then(() => rl.prompt());
     return;
   }
+
 
   // Handle normal (non-pipeline) command
   const args = parting(input);
