@@ -297,19 +297,30 @@ const pwd = (args) => {
   }
 }
 
-const prompt=()=>{
+const prompt = () => {
   rl.question("$ ", (answer) => {
-    const args =parting (answer);
-    const command = args[0];
-    if (builtins[command]) {
-      withRedirection(args, (commandArgs) => {
-        builtins[commandArgs[0]](commandArgs);
-      });
-    } else {
-      unexpected(args, command);
-    }
-    prompt();
+    const args = parting(answer);
+    
+    withRedirection(args, (commandArgs) => {
+      const command = commandArgs[0];
+      if (!command) {
+        prompt();
+        return;
+      }
+
+      if (builtins[command]) {
+        builtins[command](commandArgs);
+      } else {
+        const ok = externalCommand(commandArgs);
+        if (!ok) {
+          console.error(`${command}: command not found`);
+        }
+      }
+
+      prompt();
+    });
   });
-}
+};
+
 
 prompt();
