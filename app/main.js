@@ -9,52 +9,6 @@ const rl = readline.createInterface({
 
 const builtins ={
   echo: (args)=>{
-  //   if(args[0] == "echo"){
-    // const new_arg = args.slice(1).join(" ");
-    //     // const regex = /'([^']+)'/g; // just match single quotes
-    //     const regex = /^["']([^"']*)["']$/; // match double or single quotes
-    //     const match = regex.exec(new_arg);
-    //     if (match) {
-      //       const result = match[1];
-  //       console.log(result); 
-  //     }
-  //     else{
-    //       console.log(new_arg);
-    //     }
-    //  }
-      // const new_arg = args.slice(1).join(" ");
-      // const arg = [];
-      // let current = '';
-      // let inSingle = false;
-      // let inDouble = false;
-      // let escape = false;
-
-      // for (let i = 0; i < new_arg.length; i++) {
-      //   const char = new_arg[i];
-
-      //   if (escape) {
-      //     current += char;
-      //     escape = false;
-      //   } else if (char === '\\') {
-      //     escape = true;
-      //   } else if (char === "'" && !inDouble) {
-      //     inSingle = !inSingle;
-      //   } else if (char === '"' && !inSingle) {
-      //     inDouble = !inDouble;
-      //   } else if (char === ' ' && !inSingle && !inDouble) {
-      //     if (current.length > 0) {
-      //       arg.push(current);
-      //       current = '';
-      //     }
-      //   } else {
-      //     current += char;
-      //   }
-      // }
-
-      // if (current.length > 0) {
-      //   arg.push(current);
-      // }
-      // console.log(arg);
       console.log(args.slice(1).join(" "));
   },
   exit:(args)=>{
@@ -127,11 +81,6 @@ const builtins ={
 const parting =(answer)=> bashSplit(answer);
 
 
-// const parting =(answer)=>{
-//   answer = answer.trim();
-//   const args = answer.split(" ");
-//   return args;
-// }
 
 const unexpected = (args,command) => {
   // If the first argument is not "echo" or "exit", print an error message
@@ -209,18 +158,42 @@ function bashSplit(input) {
 
 const externalCommand = (args) => {
   if(args.length > 1){
-    const command_args = args.slice(1);
-    // spawnSync(args[0], command_args, {
-    //   stdio: 'inherit',
-    //   encoding: 'utf8',
-    // });
-    const command = args[0];
+    // const command_args = args.slice(1);
+    // we have to implement Redirect stdout
+    // dectecting >, 1>
+    const indexOfRedirect = args.findIndex(arg => arg === '>' || arg === '1>');
+    if (redirectIndex !== -1 && !args[redirectIndex + 1]) {
+      console.log("Redirection error: no file specified");
+      return 0;
+    }
+    
+    const commandArgs = args[0];
+    const output_file = null;
+    if (indexOfRedirect !== -1) {
+      output_file = args[indexOfRedirect + 1];
+      if (!output_file) {
+        console.log(`bash: ${commandArgs}: missing argument`);
+        return 0;
+      }
+      commandArgs = args.slice(0, indexOfRedirect).join(" ");
+    }
+
+    if (commandArgs.length === 0) return 0;
+
+
+
+    const command = commandArgs[0];
+    const commandArguments = commandArgs.slice(1);
     const paths = process.env.PATH.split(":");
 
     for (const dir of paths) {
       const fullPath = `${dir}/${command}`;
       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-        const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
+        const option ={
+          encoding: "utf8",
+          stdio: output_file ?['inherit', fs.openSync(outputFile, 'w'), 'inherit']: 'inherit',
+        }
+        spawnSync(command, commandArguments, option);
         return 1;
       }
     }
