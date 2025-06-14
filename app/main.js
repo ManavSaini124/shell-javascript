@@ -20,14 +20,15 @@ const getExternalExecutables = () => {
           }
         }catch (err) {
           // Ignore errors for files that cannot be accessed
-          console.error(`Error accessing file ${filePath}: ${err.message}`);
+          // console.error(`Error accessing file ${filePath}: ${err.message}`);
         }
     }
   }catch (err) {
       // Ignore directories that cannot be read
-      console.error(`Error reading directory ${dir}: ${err.message}`);
+      // console.error(`Error reading directory ${dir}: ${err.message}`);
     }
   }
+  return [...executables];
 }
 
 const completer = (line) => {
