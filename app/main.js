@@ -3,7 +3,7 @@ const fs = require("fs");
 const {spawnSync} = require("child_process");
 const path = require("path");
 
-const builtinCommands = ["echo", "exit"];
+const builtinCommands = ["echo", "exit", "type", "pwd", "cd"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
@@ -98,7 +98,7 @@ const completer = (line) => {
     tabPressCount = 0;
     const completed = matches[0];
     lastToken = completed;
-    return [[completed + " "], current]; // ✅ return suggestion and matched prefix
+    return [[matches[0] + " "], current]; // ✅ return suggestion and matched prefix
   }
   
   if (matches.length > 1) {
