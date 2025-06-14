@@ -6,9 +6,9 @@ const path = require("path");
 const builtinCommands = ["echo", "exit"];
 
 const getExternalExecutables = () => {
-  const path = process.env.PATH.split(':');
+  const path_dir = process.env.PATH.split(':');
   const Executables = new Set();
-  for(const dir of path){
+  for(const dir of path_dir){
     try{
       const files = fs.readdirSync(dir);
       // console.log("files = ",files);
@@ -40,9 +40,10 @@ const completer = (line) => {
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
   const hits = allCommands.filter(cmd => cmd.startsWith(line));
-  if (hits.length > 0) {
-    // If there are hits, return them with a space at the end
-    return [hits.map(h => h + " "), line];
+  if (hits.length === 1) {
+    return [[hits[0] + " "], hits[0] + " "];  // <-- autocomplete
+  } else if (hits.length > 1) {
+    return [hits.map(h => h + " "), line];    // <-- multiple suggestions
   }
   else{
     process.stdout.write("\x07");
