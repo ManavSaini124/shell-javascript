@@ -557,32 +557,45 @@ rl.on('line', (input) => {
 
   // Check for pipeline
   if (input.includes('|')) {
-    const [left, right] = input.split('|').map(s => s.trim());
+    const pipelineParts = input.split('|').map(s => s.trim());
+    const processes = [];
 
-    const leftArgs = parting(left);
-    const rightArgs = parting(right);
+    let prevStdout = null;
 
-    if (leftArgs.length === 0 || rightArgs.length === 0) {
-      console.log('Invalid pipeline');
-      rl.prompt();
-      return;
+    for (let i = 0; i < pipelineParts.length; i++) {
+      const args = parting(pipelineParts[i]);
+      if (args.length === 0) continue;
+
+      const cmd = args[0];
+      const cmdArgs = args.slice(1);
+
+      const options = {
+        stdio: [
+          prevStdout ? 'pipe' : 'inherit',  // stdin from previous if not first
+          i === pipelineParts.length - 1 ? 'inherit' : 'pipe',  // stdout to next unless last
+          'inherit'
+        ]
+      };
+
+      const proc = spawn(cmd, cmdArgs, options);
+
+      if (prevStdout) {
+        prevStdout.pipe(proc.stdin);
+      }
+
+      if (i !== pipelineParts.length - 1) {
+        prevStdout = proc.stdout;
+      }
+
+      processes.push(proc);
     }
 
-    const { spawn } = require('child_process');
+    // Wait for all processes to finish
+    const promises = processes.map(
+      p => new Promise(resolve => p.on('close', resolve))
+    );
 
-    const leftCmd = leftArgs[0];
-    const rightCmd = rightArgs[0];
-
-    const leftProcess = spawn(leftCmd, leftArgs.slice(1), { stdio: ['inherit', 'pipe', 'inherit'] });
-    const rightProcess = spawn(rightCmd, rightArgs.slice(1), { stdio: ['pipe', 'inherit', 'inherit'] });
-
-    leftProcess.stdout.pipe(rightProcess.stdin);
-
-    // Wait for both processes to exit
-    rightProcess.on('close', () => {
-      rl.prompt();
-    });
-
+    Promise.all(promises).then(() => rl.prompt());
     return;
   }
 
