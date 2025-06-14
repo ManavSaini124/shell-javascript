@@ -7,7 +7,15 @@ const builtinCommands = ["echo", "exit"];
 
 const completer = (line) => {
   const hits = builtinCommands.filter(cmd => cmd.startsWith(line));
-  return [hits.length ? hits.map(h => h + " ") : [], line];
+  if (hits.length > 0) {
+    // If there are hits, return them with a space at the end
+    return [hits.map(h => h + " "), line];
+  }
+  else{
+    process.stdout.write("\x07");
+    return [[], line]; // Keep the input unchanged
+  }
+  // return [hits.length ? hits.map(h => h + " ") : [], line];
 };
 const rl = readline.createInterface({
   input: process.stdin,
