@@ -3,7 +3,7 @@ const fs = require("fs");
 const {spawnSync, spawn} = require("child_process");
 const path = require("path");
 
-const builtinCommands = ["echo", "exit", "type", "pwd", "cd"];
+const builtinCommands = ["echo", "exit", "type", "pwd", "cd","history"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
@@ -237,6 +237,8 @@ const rl = readline.createInterface({
   completer: completer,
 });
 
+const commandHistory = [];
+
 const builtins ={
   echo: (args)=>{
       console.log(args.slice(1).join(" "));
@@ -313,6 +315,14 @@ const builtins ={
       process.chdir(dir);
     }
   },
+  history: (args) => {
+    if (args[0] === "history") {
+      for (let i = 0; i < commandHistory.length; i++) {
+        console.log(`    ${i + 1}  ${commandHistory[i]}`);
+      }
+    }
+  }
+
 }
 
 const parting =(answer)=> bashSplit(answer);
@@ -561,8 +571,8 @@ rl.on('line', (input) => {
     rl.prompt();
     return;
   }
-  
 
+  commandHistory.push(input);
 
   // Check for pipeline
   if (input.includes('|')) {
@@ -615,7 +625,7 @@ rl.on('line', (input) => {
           const cmd = args[0];
           
           if (cmd === 'type') {
-            const builtins = ['echo', 'exit', 'type', 'pwd', 'cd'];
+            const builtins = ['echo', 'exit', 'type', 'pwd', 'cd', 'history'];
             const target = args[1];
             if (builtins.includes(target)) {
               console.log(target + ' is a shell builtin');
@@ -626,6 +636,11 @@ rl.on('line', (input) => {
             console.log(args.slice(1).join(' '));
           } else if (cmd === 'pwd') {
             console.log(process.cwd());
+          } else if (cmd === 'history') {
+            const history = ${JSON.stringify(commandHistory)};
+            for (let i = 0; i < history.length; i++) {
+              console.log('    ' + (i + 1) + '  ' + history[i]);
+            }
           }
         `;
         proc = spawn('node', ['-e', script], options);
