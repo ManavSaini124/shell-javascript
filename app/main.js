@@ -118,20 +118,31 @@ const completer = (line) => {
     // Single match - autocomplete
     lastCompletion.count = 0;
     return [[hits[0] + " "], line];
-  }
+  }else{
 
-  // Multiple matches
-  if (lastCompletion.count === 1) {
-    process.stdout.write("\x07"); // Bell sound on first tab
-    return [[], line];
-  } else if (lastCompletion.count === 2) {
-    // Show matches on second tab
-    process.stdout.write("\n" + hits.join("  ") + "\n");
-    rl.prompt(true);
-    return [[], line];
-  }
+    const commonPrefix = getLongestCommonPrefix(hits);
+    if (commonPrefix.length > line.trim().length) {
+      // If there's a common prefix longer than the current input
+      lastCompletion.count = 0;
+      return [[commonPrefix], line];
+    }else{
+      if (lastCompletion.count === 1) {
+        process.stdout.write("\x07"); // Bell sound on first tab
+        return [[], line];
+      }
+      else if (lastCompletion.count === 2) {
+        // Show matches on second tab
+        process.stdout.write("\n" + hits.join("  ") + "\n");
+        if (typeof rl !== 'undefined') {
+          rl.prompt(true);
+        }
 
-  return [[], line];
+        return [[], line];
+      }
+      return [[], line];
+
+    }
+  }
 };
 
 // let lastToken = "";
