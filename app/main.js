@@ -37,64 +37,6 @@ const getExternalExecutables = () => {
   return [...Executables];
 }
 
-// let lastLine = "";
-// let tabPressCount = 0;
-
-// const completer = (line) => {
-//   // Get all commands including builtins and external executables
-//   const allCommands = [...builtinCommands, ...getExternalExecutables()];
-//   // console.log("allCommands = ", allCommands);
-//   const hits = allCommands.filter(cmd => cmd.startsWith(line)).sort();
-//   if(line !== lastLine){
-//     tabPressCount = 0; // Reset tab press count if line changes
-//     lastLine = line;
-//   }
-//   if (hits.length === 1) {
-//     // tabPressCount = 0;
-//     // return [[hits[0] + " "], line];  // <-- autocomplete
-//     tabPressCount = 0;
-//     const completed = hits[0] + " ";
-//     lastLine = completed;
-//     return [[hits[0] + " "], line];  // <-- corrected
-
-
-//   } else if (hits.length > 1) {
-//     tabPressCount++;
-//     if (tabPressCount === 1) {
-//       process.stdout.write("\x07");
-//     }
-//     else if( tabPressCount === 2){
-//       process.stdout.write("\n" + hits.join("  ") + "\n");
-//       process.stdout.write(`$ ${line}`);
-
-//     }
-//     // return [hits.map(h => h + " "), line];    // <-- multiple suggestions
-//     return [[], line]; // Keep the input unchanged
-//   }
-//   else{
-//     process.stdout.write("\x07");
-//     tabPressCount = 0; // Reset tab press count if no matches
-//     return [[], line]; // Keep the input unchanged
-//   }
-//   // return [hits.length ? hits.map(h => h + " ") : [], line];
-// };
-
-const getLongestCommonPrefix = (strings) => {
-  if (!strings.length) return "";
-  if (strings.length === 1) return strings[0];
-  
-  let prefix = strings[0];
-  for (let i = 1; i < strings.length; i++) {
-    while (!strings[i].startsWith(prefix)) {
-      prefix = prefix.slice(0, -1);
-      if (!prefix) return "";
-    }
-  }
-  return prefix;
-};
-// let lastToken = "";
-// let tabPressCount = 0;
-
 let lastCompletion = { prefix: "", count: 0, hits: [] };
 
 const completer = (line) => {
@@ -116,119 +58,106 @@ const completer = (line) => {
     process.stdout.write("\x07"); // Bell sound
     return [[], line];
   } else if (hits.length === 1) {
-    // Single match - autocomplete
+    // Single match - autocomplete with space
     lastCompletion.count = 0;
-    if(hits[0] === "echo"){
-      // console.log(`\n${[hits[0] + " "]}: missing argument`);
-    }
     return [[hits[0] + " "], trimmedLine];
-  }else{
-
+  } else {
+    // Multiple matches - find longest common prefix
     const commonPrefix = getLongestCommonPrefix(hits);
+    
     if (commonPrefix.length > trimmedLine.length) {
-      // If there's a common prefix longer than the current input
+      // If there's a common prefix longer than current input, complete to it
       lastCompletion.count = 0;
+      lastCompletion.prefix = commonPrefix; // Update the prefix to the new completion
       return [[commonPrefix], trimmedLine];
-    }else{
+    } else {
+      // No longer common prefix available
       if (lastCompletion.count === 1) {
         process.stdout.write("\x07"); // Bell sound on first tab
         return [[], line];
-      }
-      else if (lastCompletion.count === 2) {
+      } else if (lastCompletion.count === 2) {
         // Show matches on second tab
         process.stdout.write("\n" + hits.join("  ") + "\n");
         if (typeof rl !== 'undefined') {
           rl.prompt(true);
         }
-
         return [[], line];
       }
       return [[], line];
-
     }
   }
 };
 
+
+const getLongestCommonPrefix = (strings) => {
+  if (!strings.length) return "";
+  if (strings.length === 1) return strings[0];
+  
+  let prefix = strings[0];
+  for (let i = 1; i < strings.length; i++) {
+    while (!strings[i].startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+      if (!prefix) return "";
+    }
+  }
+  return prefix;
+};
 // let lastToken = "";
 // let tabPressCount = 0;
+
+// let lastCompletion = { prefix: "", count: 0, hits: [] };
+
 // const completer = (line) => {
-//   const tokens = line.split(/\s+/);
-//   const current = tokens[tokens.length - 1] || "";
+//   // Get all executables (builtins + external)
+//   const trimmedLine = line.trim();
 //   const allCommands = [...builtinCommands, ...getExternalExecutables()];
-//   const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
+//   const hits = allCommands.filter((c) => c.startsWith(trimmedLine)).sort();
 
-//   if (current !== lastToken) {
-//     tabPressCount = 0;
-//     lastToken = current;
+//   // Track completion state
+//   if (lastCompletion.prefix === trimmedLine) {
+//     lastCompletion.count++;
+//   } else {
+//     lastCompletion.prefix = trimmedLine;
+//     lastCompletion.count = 1;
+//     lastCompletion.hits = hits;
 //   }
 
-//   if (matches.length === 1) {
-//     tabPressCount = 0;
-//     const completed = matches[0] + ' ';
-//     lastToken = completed;
-//     return [[completed], current];
-//   }
+//   if (hits.length === 0) {
+//     process.stdout.write("\x07"); // Bell sound
+//     return [[], line];
+//   } else if (hits.length === 1) {
+//     // Single match - autocomplete
+//     lastCompletion.count = 0;
+//     if(hits[0] === "echo"){
+//       // console.log(`\n${[hits[0] + " "]}: missing argument`);
+//     }
+//     return [[hits[0] + " "], trimmedLine];
+//   }else{
 
-//   if (matches.length > 1) {
-//     const lcp = getLongestCommonPrefix(matches);
-//     if (lcp.length > current.length) {
-//       lastToken = lcp;
-//       tabPressCount = 0;
-//       return [[lcp], current];
-//     } else {
-//       tabPressCount++;
-//       if (tabPressCount === 1) {
-//         process.stdout.write('\x07'); // bell
-//       } else if (tabPressCount === 2) {
-//         process.stdout.write('\n' + matches.join('  ') + '\n');
-//         rl.prompt(true);
+//     const commonPrefix = getLongestCommonPrefix(hits);
+//     if (commonPrefix.length > trimmedLine.length) {
+//       // If there's a common prefix longer than the current input
+//       lastCompletion.count = 0;
+//       return [[commonPrefix], trimmedLine];
+//     }else{
+//       if (lastCompletion.count === 1) {
+//         process.stdout.write("\x07"); // Bell sound on first tab
+//         return [[], line];
 //       }
-//       return [[], current];
+//       else if (lastCompletion.count === 2) {
+//         // Show matches on second tab
+//         process.stdout.write("\n" + hits.join("  ") + "\n");
+//         if (typeof rl !== 'undefined') {
+//           rl.prompt(true);
+//         }
+
+//         return [[], line];
+//       }
+//       return [[], line];
+
 //     }
 //   }
-
-//   process.stdout.write('\x07'); // bell for no match
-//   tabPressCount = 0;
-//   return [[], current];
 // };
-
-
-
-// const completer = (line) => {
-//   const words = line.split(/\s+/);
-//   const current = words[words.length - 1] || "";
-
-//   const allCommands = [...builtinCommands, ...getExternalExecutables()];
-//   const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
-
-//   if (current !== lastToken) {
-//     tabPressCount = 0;
-//     lastToken = current;
-//   }
-
-//   if (matches.length === 1) {
-//     tabPressCount = 0;
-//     const completed = matches[0];
-//     lastToken = completed;
-//     return [[matches[0] + " "], current]; // ✅ return suggestion and matched prefix
-//   }
-  
-//   if (matches.length > 1) {
-//     tabPressCount++;
-//     if (tabPressCount === 1) {
-//       process.stdout.write("\x07");
-//     } else if (tabPressCount === 2) {
-//       process.stdout.write("\n" + matches.join("  ") + "\n");
-//       rl.prompt(true);
-//     }
-//     return [[], current];
-//   }
-
-//   process.stdout.write("\x07");
-//   tabPressCount = 0;
-//   return [[], current];
-// };
-
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -492,26 +421,7 @@ const unexpected = (args,command) => {
     }
   }
 };
-// const externalCommand = (args) => {
-//   if(args.length > 1){
-//     const command_args = args.slice(1);
-//     // spawnSync(args[0], command_args, {
-//     //   stdio: 'inherit',
-//     //   encoding: 'utf8',
-//     // });
-//     const command = args[0];
-//     const paths = process.env.PATH.split(":");
 
-//     for (const dir of paths) {
-//       const fullPath = `${dir}/${command}`;
-//       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-//         const proc = spawnSync(args[0], args.slice(1), { stdio: "inherit", encoding: "utf8" });
-//         return 1;
-//       }
-//     }
-//     return 0;
-//   }
-// }
 const externalCommand = (args) => {
   if (args.length === 0) return 0;
 
@@ -597,41 +507,6 @@ const withRedirection = (args, callback) => {
     process.stderr.write = originalStderr;
   }
 };
-
-
-// const withRedirection =(args, callback) => {
-//   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
-//   let outputFile = null;
-//   let commandArgs = args;
-
-//   if (redirectIndex !== -1) {
-//     outputFile = args[redirectIndex + 1];
-//     commandArgs = args.slice(0, redirectIndex);
-//   }
-
-//   // Redirect stdout if needed
-//   const originalWrite = process.stdout.write;
-//   if (outputFile) {
-//     try {
-//       const fd = fs.openSync(outputFile, 'w');
-//       process.stdout.write = (chunk, encoding, callbackWrite) => {
-//         fs.writeSync(fd, chunk);
-//         if (callbackWrite) callbackWrite();
-//       };
-//     } catch (err) {
-//       console.log(`Redirection error: ${err.message}`);
-//       return;
-//     }
-//   }
-
-//   // Execute the actual command logic
-//   callback(commandArgs);
-
-//   // Restore stdout
-//   if (outputFile) {
-//     process.stdout.write = originalWrite;
-//   }
-// }
 
 const pwd = (args) => {
   if (args[0] === "pwd") {
@@ -826,28 +701,3 @@ rl.on('close', () => {
   }
   process.exit(0);
 });
-
-
-
-// const prompt = () => {
-//   rl.question("$ ", (answer) => {
-//     const args = parting(answer);
-//     const command = args[0];
-
-//     withRedirection(args, (commandArgs) => {
-//       if (builtins[commandArgs[0]]) {
-//         builtins[commandArgs[0]](commandArgs);
-//       } else {
-//         const result = externalCommand(commandArgs);
-//         if (!result) {
-//           console.log(`${commandArgs[0]}: command not found`);
-//         }
-//       }
-//     });
-
-//     prompt();
-//   });
-// };
-
-
-// prompt();
