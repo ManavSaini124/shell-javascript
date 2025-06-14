@@ -82,15 +82,6 @@ const parting =(answer)=> bashSplit(answer);
 
 
 
-const unexpected = (args,command) => {
-  // If the first argument is not "echo" or "exit", print an error message
-  if (!builtins[command]) {
-    const runnable = externalCommand(args);
-    if (!runnable) {
-      console.log(`${args[0]}: command not found`);
-    }
-  }
-};
 
 function bashSplit(input) {
   const args = [];
@@ -98,7 +89,7 @@ function bashSplit(input) {
   let inSingle = false;
   let inDouble = false;
   let escape = false;
-
+  
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
 
@@ -135,7 +126,7 @@ function bashSplit(input) {
       inDouble = !inDouble;
       continue;
     }
-
+    
     if (char === ' ' && !inSingle && !inDouble) {
       if (current.length > 0) {
         args.push(current);
@@ -155,6 +146,15 @@ function bashSplit(input) {
 
 
 
+const unexpected = (args,command) => {
+  // If the first argument is not "echo" or "exit", print an error message
+  if (!builtins[command]) {
+    const runnable = externalCommand(args);
+    if (!runnable) {
+      console.log(`${args[0]}: command not found`);
+    }
+  }
+};
 
 const externalCommand = (args) => {
   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
@@ -241,27 +241,15 @@ const prompt=()=>{
   rl.question("$ ", (answer) => {
     const args =parting (answer);
     const command = args[0];
-
-    withRedirection(args, (commandArgs) => {
-      if (builtins[commandArgs[0]]) {
+    if (builtins[command]) {
+      withRedirection(args, (commandArgs) => {
         builtins[commandArgs[0]](commandArgs);
-      } else {
-        unexpected(commandArgs, commandArgs[0]);
-      }
-    });
+      });
+    } else {
+      unexpected(args, command);
+    }
     prompt();
   });
 }
-// const prompt=()=>{
-//   rl.question("$ ", (answer) => {
-//     const args =parting (answer);
-//     exit(args);
-//     echo(args);
-//     type(args);
-//     pwd(args);
-//     unexpected(args);
-//     prompt();
-//   });
-// }
 
 prompt();
