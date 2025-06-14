@@ -8,11 +8,12 @@ const builtinCommands = ["echo", "exit"];
 const getExternalExecutables = () => {
   const path = process.env.PATH.split(':');
   const Executables = new Set();
-  for( const dir in path){
+  for(const dir in path){
     try{
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const filePath = path.join(dir, file);
+        console.log(filePath);
         try{
           const stats = fs.statSync(filePath);
           if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK) === undefined) {
