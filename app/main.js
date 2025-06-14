@@ -50,8 +50,14 @@ const completer = (line) => {
     lastLine = line;
   }
   if (hits.length === 1) {
+    // tabPressCount = 0;
+    // return [[hits[0] + " "], line];  // <-- autocomplete
     tabPressCount = 0;
-    return [[hits[0] + " "], line];  // <-- autocomplete
+    const completed = hits[0] + " ";
+    lastLine = completed;
+    return [[completed], completed];  // <-- corrected
+
+
   } else if (hits.length > 1) {
     tabPressCount++;
     if (tabPressCount === 1) {
