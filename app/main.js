@@ -18,17 +18,17 @@ const getExternalExecutables = () => {
         console.log("filePath = ",filePath);
         try{
           const stats = fs.statSync(filePath);
-          if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK) === undefined) {
+          if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK)) {
             Executables.add(file);
           }
-        }catch (err) {
+        }catch (_) {
           // Ignore errors for files that cannot be accessed
-          // console.error(`Error accessing file ${filePath}: ${err.message}`);
+          console.error(`Error accessing file ${filePath}: ${err.message}`);
         }
     }
-  }catch (err) {
+  }catch (_) {
       // Ignore directories that cannot be read
-      // console.error(`Error reading directory ${dir}: ${err.message}`);
+      console.error(`Error reading directory ${dir}: ${err.message}`);
     }
   }
   return [...Executables];
