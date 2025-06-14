@@ -79,6 +79,19 @@ const getExternalExecutables = () => {
 //   // return [hits.length ? hits.map(h => h + " ") : [], line];
 // };
 
+const getLongestCommonPrefix = (strings) => {
+  if (!strings.length) return "";
+  if (strings.length === 1) return strings[0];
+  
+  let prefix = strings[0];
+  for (let i = 1; i < strings.length; i++) {
+    while (!strings[i].startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+      if (!prefix) return "";
+    }
+  }
+  return prefix;
+};
 // let lastToken = "";
 // let tabPressCount = 0;
 
@@ -86,29 +99,8 @@ let lastCompletion = { prefix: "", count: 0, hits: [] };
 
 const completer = (line) => {
   // Get all executables (builtins + external)
-  let executables = new Set(builtinCommands);
-  const pathDirs = process.env.PATH.split(":");
-  pathDirs.forEach((dir) => {
-    try {
-      const files = fs.readdirSync(dir);
-      files.forEach(file => {
-        const filePath = path.join(dir, file);
-        try {
-          const stats = fs.statSync(filePath);
-          fs.accessSync(filePath, fs.constants.X_OK);
-          if (stats.isFile()) {
-            executables.add(file);
-          }
-        } catch (err) {
-          // Ignore files that can't be accessed
-        }
-      });
-    } catch (err) {
-      // Ignore directories that can't be read
-    }
-  });
-
-  const hits = [...executables].filter((c) => c.startsWith(line.trim())).sort();
+  const allCommands = [...builtinCommands, ...getExternalExecutables()];
+  const hits = allCommands.filter((c) => c.startsWith(line.trim())).sort();
 
   // Track completion state
   if (lastCompletion.prefix === line.trim()) {
@@ -142,17 +134,6 @@ const completer = (line) => {
   return [[], line];
 };
 
-// const getLongestCommonPrefix = (arr) => {
-//   if (!arr.length) return "";
-//   let prefix = arr[0];
-//   for (let i = 1; i < arr.length; i++) {
-//     while (!arr[i].startsWith(prefix)) {
-//       prefix = prefix.slice(0, -1);
-//       if (!prefix) return "";
-//     }
-//   }
-//   return prefix;
-// };
 // let lastToken = "";
 // let tabPressCount = 0;
 // const completer = (line) => {
