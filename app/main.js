@@ -82,61 +82,119 @@ const getExternalExecutables = () => {
 // let lastToken = "";
 // let tabPressCount = 0;
 
-const getLongestCommonPrefix = (arr) => {
-  if (!arr.length) return "";
-  let prefix = arr[0];
-  for (let i = 1; i < arr.length; i++) {
-    while (!arr[i].startsWith(prefix)) {
-      prefix = prefix.slice(0, -1);
-      if (!prefix) return "";
-    }
-  }
-  return prefix;
-};
-
-let lastToken = "";
-let tabPressCount = 0;
+let lastCompletion = { prefix: "", count: 0, hits: [] };
 
 const completer = (line) => {
-  const tokens = line.split(/\s+/);
-  const current = tokens[tokens.length - 1] || "";
-  const allCommands = [...builtinCommands, ...getExternalExecutables()];
-  const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
-
-  if (current !== lastToken) {
-    tabPressCount = 0;
-    lastToken = current;
-  }
-
-  if (matches.length === 1) {
-    tabPressCount = 0;
-    const completed = matches[0] + ' ';
-    lastToken = completed;
-    return [[completed], current];
-  }
-
-  if (matches.length > 1) {
-    const lcp = getLongestCommonPrefix(matches);
-    if (lcp.length > current.length) {
-      lastToken = lcp;
-      tabPressCount = 0;
-      return [[lcp], current];
-    } else {
-      tabPressCount++;
-      if (tabPressCount === 1) {
-        process.stdout.write('\x07'); // bell
-      } else if (tabPressCount === 2) {
-        process.stdout.write('\n' + matches.join('  ') + '\n');
-        rl.prompt(true);
-      }
-      return [[], current];
+  // Get all executables (builtins + external)
+  let executables = new Set(builtinCommands);
+  const pathDirs = process.env.PATH.split(":");
+  pathDirs.forEach((dir) => {
+    try {
+      const files = fs.readdirSync(dir);
+      files.forEach(file => {
+        const filePath = path.join(dir, file);
+        try {
+          const stats = fs.statSync(filePath);
+          fs.accessSync(filePath, fs.constants.X_OK);
+          if (stats.isFile()) {
+            executables.add(file);
+          }
+        } catch (err) {
+          // Ignore files that can't be accessed
+        }
+      });
+    } catch (err) {
+      // Ignore directories that can't be read
     }
+  });
+
+  const hits = [...executables].filter((c) => c.startsWith(line.trim())).sort();
+
+  // Track completion state
+  if (lastCompletion.prefix === line.trim()) {
+    lastCompletion.count++;
+  } else {
+    lastCompletion.prefix = line.trim();
+    lastCompletion.count = 1;
+    lastCompletion.hits = hits;
   }
 
-  process.stdout.write('\x07'); // bell for no match
-  tabPressCount = 0;
-  return [[], current];
+  if (hits.length === 0) {
+    process.stdout.write("\x07"); // Bell sound
+    return [[], line];
+  } else if (hits.length === 1) {
+    // Single match - autocomplete
+    lastCompletion.count = 0;
+    return [[hits[0] + " "], line];
+  }
+
+  // Multiple matches
+  if (lastCompletion.count === 1) {
+    process.stdout.write("\x07"); // Bell sound on first tab
+    return [[], line];
+  } else if (lastCompletion.count === 2) {
+    // Show matches on second tab
+    process.stdout.write("\n" + hits.join("  ") + "\n");
+    rl.prompt(true);
+    return [[], line];
+  }
+
+  return [[], line];
 };
+
+// const getLongestCommonPrefix = (arr) => {
+//   if (!arr.length) return "";
+//   let prefix = arr[0];
+//   for (let i = 1; i < arr.length; i++) {
+//     while (!arr[i].startsWith(prefix)) {
+//       prefix = prefix.slice(0, -1);
+//       if (!prefix) return "";
+//     }
+//   }
+//   return prefix;
+// };
+// let lastToken = "";
+// let tabPressCount = 0;
+// const completer = (line) => {
+//   const tokens = line.split(/\s+/);
+//   const current = tokens[tokens.length - 1] || "";
+//   const allCommands = [...builtinCommands, ...getExternalExecutables()];
+//   const matches = allCommands.filter(cmd => cmd.startsWith(current)).sort();
+
+//   if (current !== lastToken) {
+//     tabPressCount = 0;
+//     lastToken = current;
+//   }
+
+//   if (matches.length === 1) {
+//     tabPressCount = 0;
+//     const completed = matches[0] + ' ';
+//     lastToken = completed;
+//     return [[completed], current];
+//   }
+
+//   if (matches.length > 1) {
+//     const lcp = getLongestCommonPrefix(matches);
+//     if (lcp.length > current.length) {
+//       lastToken = lcp;
+//       tabPressCount = 0;
+//       return [[lcp], current];
+//     } else {
+//       tabPressCount++;
+//       if (tabPressCount === 1) {
+//         process.stdout.write('\x07'); // bell
+//       } else if (tabPressCount === 2) {
+//         process.stdout.write('\n' + matches.join('  ') + '\n');
+//         rl.prompt(true);
+//       }
+//       return [[], current];
+//     }
+//   }
+
+//   process.stdout.write('\x07'); // bell for no match
+//   tabPressCount = 0;
+//   return [[], current];
+// };
 
 
 
