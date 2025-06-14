@@ -21,12 +21,12 @@ const getExternalExecutables = () => {
           if (stats.isFile() && fs.accessSync(filePath, fs.constants.X_OK)) {
             Executables.add(file);
           }
-        }catch (_) {
+        }catch (err) {
           // Ignore errors for files that cannot be accessed
           console.error(`Error accessing file ${filePath}: ${err.message}`);
         }
     }
-  }catch (_) {
+  }catch (err) {
       // Ignore directories that cannot be read
       console.error(`Error reading directory ${dir}: ${err.message}`);
     }
