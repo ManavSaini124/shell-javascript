@@ -8,7 +8,7 @@ const builtinCommands = ["echo", "exit"];
 const getExternalExecutables = () => {
   const path = process.env.PATH.split(':');
   const Executables = new Set();
-  for(const dir in path){
+  for(const dir of path){
     try{
       const files = fs.readdirSync(dir);
       console.log("files = ",files);
