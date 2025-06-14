@@ -98,7 +98,7 @@ const completer = (line) => {
     tabPressCount = 0;
     const completed = matches[0];
     lastToken = completed;
-    return [[completed], current]; // ✅ return suggestion and matched prefix
+    return [[completed + " "], current]; // ✅ return suggestion and matched prefix
   }
   
   if (matches.length > 1) {
