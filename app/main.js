@@ -240,15 +240,39 @@ const rl = readline.createInterface({
 const commandHistory = [];
 const historyFilePositions = new Map(); // Track positions for -a flag
 
+// this code will start directly when code executes
+if (process.env.HISTFILE) {
+  try {
+    if (fs.existsSync(process.env.HISTFILE)) {
+      const fileContent = fs.readFileSync(process.env.HISTFILE, 'utf8');
+      const lines = fileContent.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+      commandHistory.push(...lines);
+    }
+  } catch (err) {
+    // Silently ignore errors when loading history file
+  }
+}
+
 const builtins ={
   echo: (args)=>{
       console.log(args.slice(1).join(" "));
   },
   exit:(args)=>{
+    if (process.env.HISTFILE && commandHistory.length > 0) {
+      try {
+        const historyContent = commandHistory.join('\n') + '\n';
+        fs.writeFileSync(process.env.HISTFILE, historyContent, 'utf8');
+      } catch (err) {
+        // Silently ignore errors when saving history file
+      }
+    }
+  
     if (args[0] === "exit" && args[1] === "0") {
       rl.close();
       process.exit(0);
-  }
+    }
   },
   type: (args) => {
     if (args[0] === "type") {
@@ -805,8 +829,18 @@ rl.on('line', (input) => {
 });
 
 rl.on('close', () => {
+  // Save history to HISTFILE on exit
+  if (process.env.HISTFILE && commandHistory.length > 0) {
+    try {
+      const historyContent = commandHistory.join('\n') + '\n';
+      fs.writeFileSync(process.env.HISTFILE, historyContent, 'utf8');
+    } catch (err) {
+      // Silently ignore errors when saving history file
+    }
+  }
   process.exit(0);
 });
+
 
 
 // const prompt = () => {
