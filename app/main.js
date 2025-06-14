@@ -99,14 +99,15 @@ let lastCompletion = { prefix: "", count: 0, hits: [] };
 
 const completer = (line) => {
   // Get all executables (builtins + external)
+  const trimmedLine = line.trim();
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
-  const hits = allCommands.filter((c) => c.startsWith(line.trim())).sort();
+  const hits = allCommands.filter((c) => c.startsWith(trimmedLine)).sort();
 
   // Track completion state
-  if (lastCompletion.prefix === line.trim()) {
+  if (lastCompletion.prefix === trimmedLine) {
     lastCompletion.count++;
   } else {
-    lastCompletion.prefix = line.trim();
+    lastCompletion.prefix = trimmedLine;
     lastCompletion.count = 1;
     lastCompletion.hits = hits;
   }
@@ -117,14 +118,14 @@ const completer = (line) => {
   } else if (hits.length === 1) {
     // Single match - autocomplete
     lastCompletion.count = 0;
-    return [[hits[0] + " "], line];
+    return [[hits[0] + " "], trimmedLine];
   }else{
 
     const commonPrefix = getLongestCommonPrefix(hits);
-    if (commonPrefix.length > line.trim().length) {
+    if (commonPrefix.length > trimmedLine.length) {
       // If there's a common prefix longer than the current input
       lastCompletion.count = 0;
-      return [[commonPrefix], line];
+      return [[commonPrefix], trimmedLine];
     }else{
       if (lastCompletion.count === 1) {
         process.stdout.write("\x07"); // Bell sound on first tab
