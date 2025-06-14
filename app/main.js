@@ -167,8 +167,8 @@ const externalCommand = (args) => {
       return 0;
     }
 
-    const commandArgs = args[0];
-    const output_file = null;
+    let commandArgs = args[0];
+    let output_file = null;
     if (indexOfRedirect !== -1) {
       output_file = args[indexOfRedirect + 1];
       if (!output_file) {
