@@ -44,7 +44,7 @@ const completer = (line) => {
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
   // console.log("allCommands = ", allCommands);
-  const hits = allCommands.filter(cmd => cmd.startsWith(line));
+  const hits = allCommands.filter(cmd => cmd.startsWith(line)).sort();
   if(line !== lastLine){
     tabPressCount = 0; // Reset tab press count if line changes
     lastLine = line;
