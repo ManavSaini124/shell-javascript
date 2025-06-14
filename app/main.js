@@ -434,25 +434,64 @@ const pwd = (args) => {
   }
 }
 
-const prompt = () => {
-  rl.question("$ ", (answer) => {
-    const args = parting(answer);
-    const command = args[0];
+rl.prompt();
 
-    withRedirection(args, (commandArgs) => {
-      if (builtins[commandArgs[0]]) {
-        builtins[commandArgs[0]](commandArgs);
-      } else {
-        const result = externalCommand(commandArgs);
-        if (!result) {
-          console.log(`${commandArgs[0]}: command not found`);
-        }
+rl.on('line', (input) => {
+  const args = parting(input.trim());
+  
+  if (args.length === 0) {
+    rl.prompt();
+    return;
+  }
+
+  const command = args[0];
+
+  // Handle exit command specially
+  if (command === 'exit') {
+    if (args[1] === '0' || args.length === 1) {
+      rl.close();
+      process.exit(0);
+    }
+  }
+
+  withRedirection(args, (commandArgs) => {
+    if (builtins[commandArgs[0]]) {
+      builtins[commandArgs[0]](commandArgs);
+    } else {
+      const result = externalCommand(commandArgs);
+      if (!result) {
+        console.log(`${commandArgs[0]}: command not found`);
       }
-    });
-
-    prompt();
+    }
   });
-};
+
+  rl.prompt();
+});
+
+rl.on('close', () => {
+  process.exit(0);
+});
 
 
-prompt();
+// const prompt = () => {
+//   rl.question("$ ", (answer) => {
+//     const args = parting(answer);
+//     const command = args[0];
+
+//     withRedirection(args, (commandArgs) => {
+//       if (builtins[commandArgs[0]]) {
+//         builtins[commandArgs[0]](commandArgs);
+//       } else {
+//         const result = externalCommand(commandArgs);
+//         if (!result) {
+//           console.log(`${commandArgs[0]}: command not found`);
+//         }
+//       }
+//     });
+
+//     prompt();
+//   });
+// };
+
+
+// prompt();
