@@ -6,7 +6,14 @@ const path = require("path");
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+  completer: completer,
 });
+const builtinCommands = ["echo", "exit"];
+
+const completer = (line) => {
+  const hits = builtinCommands.filter(cmd => cmd.startsWith(line));
+  return [hits.length ? hits.map(h => h + " ") : [], line];
+};
 
 const builtins ={
   echo: (args)=>{
