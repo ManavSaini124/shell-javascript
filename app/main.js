@@ -1,6 +1,7 @@
 const readline = require("readline");
 const fs = require("fs");
 const {spawnSync} = require("child_process");
+const path = require("path");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -197,6 +198,12 @@ const externalCommand = (args) => {
 
   return 0;
 };
+const ensureDirExists = (filePath) => {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+};
 
 const withRedirection = (args, callback) => {
   let commandArgs = [];
@@ -222,14 +229,18 @@ const withRedirection = (args, callback) => {
   const originalStderr = process.stderr.write;
 
   if (stdoutTarget) {
+    ensureDirExists(stdoutTarget);
     const fd = fs.openSync(stdoutTarget, 'w');
     process.stdout.write = (chunk, encoding, cb) => {
       fs.writeSync(fd, chunk);
-      if (cb) cb();
+      if (cb){ 
+        cb();
+      }
     };
   }
 
   if (stderrTarget) {
+    ensureDirExists(stderrTarget);
     const fd = fs.openSync(stderrTarget, 'w');
     process.stderr.write = (chunk, encoding, cb) => {
       fs.writeSync(fd, chunk);
