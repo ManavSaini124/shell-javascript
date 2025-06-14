@@ -59,7 +59,7 @@ const completer = (line) => {
     }
     else if( tabPressCount === 2){
       process.stdout.write(hits.join("  ") + "\n");
-      process.stdout.write(`$ ${line}`);
+      process.stdout.write(` ${line}`);
 
     }
     // return [hits.map(h => h + " "), line];    // <-- multiple suggestions
