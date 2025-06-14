@@ -7,13 +7,13 @@ const builtinCommands = ["echo", "exit"];
 
 const getExternalExecutables = () => {
   const path_dir = process.env.PATH.split(':');
-  console.log("path_dir = ", path_dir);
+  // console.log("path_dir = ", path_dir);
   
   const Executables = new Set();
   for(const dir of path_dir){
     try{
       const files = fs.readdirSync(dir);
-      console.log("files = ",files);
+      // console.log("files = ",files);
       for (const file of files) {
         // console.log("file = ",file);
         const filePath = path.join(dir, file);
@@ -41,10 +41,10 @@ const completer = (line) => {
   
   // Get all commands including builtins and external executables
   const allCommands = [...builtinCommands, ...getExternalExecutables()];
-  console.log("allCommands = ", allCommands);
+  // console.log("allCommands = ", allCommands);
   const hits = allCommands.filter(cmd => cmd.startsWith(line));
   if (hits.length === 1) {
-    return [[hits[0] + " "], hits[0] + " "];  // <-- autocomplete
+    return [[hits[0] + " "], line];  // <-- autocomplete
   } else if (hits.length > 1) {
     return [hits.map(h => h + " "), line];    // <-- multiple suggestions
   }
