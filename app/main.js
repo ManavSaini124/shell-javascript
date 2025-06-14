@@ -156,47 +156,89 @@ const unexpected = (args,command) => {
   }
 };
 
+// const externalCommand = (args) => {
+//   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
+//   let commandArgs = args;
+//   let outputFile = null;
+
+//   if (redirectIndex !== -1) {
+//     if (!args[redirectIndex + 1]) {
+//       console.log("Redirection error: no output file specified");
+//       return 0;
+//     }
+//     outputFile = args[redirectIndex + 1];
+//     commandArgs = args.slice(0, redirectIndex);
+//   }
+
+//   if (commandArgs.length === 0) return 0;
+
+//   const command = commandArgs[0];
+//   const commandArguments = commandArgs.slice(1);
+//   const paths = process.env.PATH.split(":");
+
+//   for (const dir of paths) {
+//     const fullPath = `${dir}/${command}`;
+    
+//       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+//         const options = {
+//           encoding: "utf8",
+//           stdio: outputFile
+//             ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
+//             : 'inherit',
+//           argv0: command,
+//         };
+
+//         // ✅ Call the resolved path
+//         spawnSync(fullPath, commandArguments, options);
+//         return 1;
+//       }
+    
+//   }
+
+//   return 0;
+// };
+
 const externalCommand = (args) => {
-  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
-  let commandArgs = args;
-  let outputFile = null;
-
-  if (redirectIndex !== -1) {
-    if (!args[redirectIndex + 1]) {
-      console.log("Redirection error: no output file specified");
-      return 0;
+  const stdout = null;
+  const stderr = null;
+  const arguments =[];
+  for (let i = 1; i < args.length; i++) {
+    if(args[i] === '>' && args[i] === '1>') {
+      stdout = args[i + 1];
+      i++;
     }
-    outputFile = args[redirectIndex + 1];
-    commandArgs = args.slice(0, redirectIndex);
+    else if(args[i] === '2>'){
+      stderr = args[i + 1];
+      i++;
+    }else{
+      arguments.push(args[i]);
+    }
   }
+  if (arguments.length === 0) return 0;
 
-  if (commandArgs.length === 0) return 0;
-
-  const command = commandArgs[0];
-  const commandArguments = commandArgs.slice(1);
+  const command = arguments[0];
+  const commandArguments = arguments.slice(1);
   const paths = process.env.PATH.split(":");
 
   for (const dir of paths) {
     const fullPath = `${dir}/${command}`;
     
-      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-        const options = {
-          encoding: "utf8",
-          stdio: outputFile
-            ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
-            : 'inherit',
-          argv0: command,
-        };
-
-        // ✅ Call the resolved path
-        spawnSync(fullPath, commandArguments, options);
-        return 1;
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      const options = {
+        encoding: "utrf8",
+        studio : [
+          'inherit',
+          stdout ? fs.openSync(stdout, 'w') : 'inherit',
+          stderr ? fs.openSync(stderr, 'w') : 'inherit'
+        ],
+        argv0: command
       }
-    
+      spawnSync(fullPath, commandArguments, options);
+      return 1; 
+    }
   }
-
   return 0;
-};
+}
 
 const withRedirection =(args, callback) => {
   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
