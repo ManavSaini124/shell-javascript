@@ -156,123 +156,129 @@ const unexpected = (args,command) => {
   }
 };
 
-// const externalCommand = (args) => {
-//   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
-//   let commandArgs = args;
-//   let outputFile = null;
-
-//   if (redirectIndex !== -1) {
-//     if (!args[redirectIndex + 1]) {
-//       console.log("Redirection error: no output file specified");
-//       return 0;
-//     }
-//     outputFile = args[redirectIndex + 1];
-//     commandArgs = args.slice(0, redirectIndex);
-//   }
-
-//   if (commandArgs.length === 0) return 0;
-
-//   const command = commandArgs[0];
-//   const commandArguments = commandArgs.slice(1);
-//   const paths = process.env.PATH.split(":");
-
-//   for (const dir of paths) {
-//     const fullPath = `${dir}/${command}`;
-    
-//       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-//         const options = {
-//           encoding: "utf8",
-//           stdio: outputFile
-//             ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
-//             : 'inherit',
-//           argv0: command,
-//         };
-
-//         // ✅ Call the resolved path
-//         spawnSync(fullPath, commandArguments, options);
-//         return 1;
-//       }
-    
-//   }
-
-//   return 0;
-// };
-
 const externalCommand = (args) => {
-  const stdout = null;
-  const stderr = null;
-  const arguments =[];
-  for (let i = 1; i < args.length; i++) {
-    if(args[i] === '>' && args[i] === '1>') {
-      stdout = args[i + 1];
-      i++;
-    }
-    else if(args[i] === '2>'){
-      stderr = args[i + 1];
-      i++;
-    }else{
-      arguments.push(args[i]);
-    }
-  }
-  if (arguments.length === 0) return 0;
+  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
+  let commandArgs = args;
+  let outputFile = null;
 
-  const command = arguments[0];
-  const commandArguments = arguments.slice(1);
+  if (redirectIndex !== -1) {
+    if (!args[redirectIndex + 1]) {
+      console.log("Redirection error: no output file specified");
+      return 0;
+    }
+    outputFile = args[redirectIndex + 1];
+    commandArgs = args.slice(0, redirectIndex);
+  }
+
+  if (commandArgs.length === 0) return 0;
+
+  const command = commandArgs[0];
+  const commandArguments = commandArgs.slice(1);
   const paths = process.env.PATH.split(":");
 
   for (const dir of paths) {
     const fullPath = `${dir}/${command}`;
     
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      const options = {
-        encoding: "utrf8",
-        studio : [
-          'inherit',
-          stdout ? fs.openSync(stdout, 'w') : 'inherit',
-          stderr ? fs.openSync(stderr, 'w') : 'inherit'
-        ],
-        argv0: command
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        const options = {
+          encoding: "utf8",
+          stdio: outputFile
+            ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
+            : 'inherit',
+          argv0: command,
+        };
+
+        // ✅ Call the resolved path
+        spawnSync(fullPath, commandArguments, options);
+        return 1;
       }
-      spawnSync(fullPath, commandArguments, options);
-      return 1; 
-    }
+    
   }
+
   return 0;
-}
+};
 
-const withRedirection =(args, callback) => {
-  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
-  let outputFile = null;
-  let commandArgs = args;
+const withRedirection = (args, callback) => {
+  let commandArgs = [];
+  let stdoutTarget = null;
+  let stderrTarget = null;
 
-  if (redirectIndex !== -1) {
-    outputFile = args[redirectIndex + 1];
-    commandArgs = args.slice(0, redirectIndex);
-  }
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    const next = args[i + 1];
 
-  // Redirect stdout if needed
-  const originalWrite = process.stdout.write;
-  if (outputFile) {
-    try {
-      const fd = fs.openSync(outputFile, 'w');
-      process.stdout.write = (chunk, encoding, callbackWrite) => {
-        fs.writeSync(fd, chunk);
-        if (callbackWrite) callbackWrite();
-      };
-    } catch (err) {
-      console.log(`Redirection error: ${err.message}`);
-      return;
+    if ((arg === '>' || arg === '1>') && next) {
+      stdoutTarget = next;
+      i++; // skip next (file path)
+    } else if (arg === '2>' && next) {
+      stderrTarget = next;
+      i++;
+    } else {
+      commandArgs.push(arg);
     }
   }
 
-  // Execute the actual command logic
+  const originalStdout = process.stdout.write;
+  const originalStderr = process.stderr.write;
+
+  if (stdoutTarget) {
+    const fd = fs.openSync(stdoutTarget, 'w');
+    process.stdout.write = (chunk, encoding, cb) => {
+      fs.writeSync(fd, chunk);
+      if (cb) cb();
+    };
+  }
+
+  if (stderrTarget) {
+    const fd = fs.openSync(stderrTarget, 'w');
+    process.stderr.write = (chunk, encoding, cb) => {
+      fs.writeSync(fd, chunk);
+      if (cb) cb();
+    };
+  }
+
+  // Run command (built-in or external)
   callback(commandArgs);
 
-  // Restore stdout
-  if (outputFile) {
-    process.stdout.write = originalWrite;
-  }
-}
+  // Restore stdout/stderr
+  process.stdout.write = originalStdout;
+  process.stderr.write = originalStderr;
+};
+
+
+// const withRedirection =(args, callback) => {
+//   const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
+//   let outputFile = null;
+//   let commandArgs = args;
+
+//   if (redirectIndex !== -1) {
+//     outputFile = args[redirectIndex + 1];
+//     commandArgs = args.slice(0, redirectIndex);
+//   }
+
+//   // Redirect stdout if needed
+//   const originalWrite = process.stdout.write;
+//   if (outputFile) {
+//     try {
+//       const fd = fs.openSync(outputFile, 'w');
+//       process.stdout.write = (chunk, encoding, callbackWrite) => {
+//         fs.writeSync(fd, chunk);
+//         if (callbackWrite) callbackWrite();
+//       };
+//     } catch (err) {
+//       console.log(`Redirection error: ${err.message}`);
+//       return;
+//     }
+//   }
+
+//   // Execute the actual command logic
+//   callback(commandArgs);
+
+//   // Restore stdout
+//   if (outputFile) {
+//     process.stdout.write = originalWrite;
+//   }
+// }
 
 const pwd = (args) => {
   if (args[0] === "pwd") {
