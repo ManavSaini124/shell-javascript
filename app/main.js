@@ -247,29 +247,36 @@ const builtins ={
       process.exit(0);
   }
   },
-  type: (args)=>{
-    const validCommands = ["echo", "exit", "type" , "pwd"];
-    if(args[0] === "type"){
-      if(validCommands.includes(args[1])){
-        console.log(`${args[1]} is a shell builtin`);
+  type: (args) => {
+    if (args[0] === "type") {
+      if (args.length < 2) {
+        console.log("type: missing argument");
+        return;
       }
-      else{
-        if (args.length < 2) {
-          console.log("type: missing argument");
-          return;
-        }
-        
-        // access the PATH environment variable to find the command
-        const dirs = process.env.PATH.split(':');
-        for( const dir in dirs){
-          const filePath = `${dirs[dir]}/${args[1]}`;
+
+      const command = args[1];
+      
+      // Check if it's a builtin
+      if (builtinCommands.includes(command)) {
+        console.log(`${command} is a shell builtin`);
+        return;
+      }
+      
+      // Check external commands in PATH
+      const dirs = process.env.PATH.split(':');
+      for (const dir of dirs) {
+        const filePath = `${dir}/${command}`;
+        try {
           if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-            console.log(`${args[1]} is ${filePath}`);
+            console.log(`${command} is ${filePath}`);
             return;
           }
+        } catch (err) {
+          // Continue checking other directories
         }
-        console.log(`${args[1]}: not found`);
       }
+      
+      console.log(`${command}: not found`);
     }
   },
   pwd: (args) => {
@@ -556,10 +563,12 @@ rl.on('line', (input) => {
   }
   
 
+
   // Check for pipeline
   if (input.includes('|')) {
     const pipelineParts = input.split('|').map(s => s.trim());
     const processes = [];
+
     let prevStdout = null;
 
     for (let i = 0; i < pipelineParts.length; i++) {
@@ -568,6 +577,26 @@ rl.on('line', (input) => {
 
       const cmd = args[0];
       const cmdArgs = args.slice(1);
+
+      // Find the executable path
+      let execPath = cmd;
+      if (!builtins[cmd]) {
+        const paths = process.env.PATH.split(':');
+        let found = false;
+        for (const dir of paths) {
+          const testPath = `${dir}/${cmd}`;
+          if (fs.existsSync(testPath) && fs.statSync(testPath).isFile()) {
+            execPath = testPath;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          console.log(`${cmd}: command not found`);
+          rl.prompt();
+          return;
+        }
+      }
 
       const options = {
         stdio: [
@@ -578,35 +607,30 @@ rl.on('line', (input) => {
       };
 
       let proc;
-
-      // Handle built-in commands by creating a Node.js subprocess
       if (builtins[cmd]) {
-        const builtinScript = `
+        // Create a simple Node process for built-ins
+        const script = `
+          const fs = require('fs');
           const args = ${JSON.stringify(args)};
-          if (args[0] === 'echo') {
+          const cmd = args[0];
+          
+          if (cmd === 'type') {
+            const builtins = ['echo', 'exit', 'type', 'pwd', 'cd'];
+            const target = args[1];
+            if (builtins.includes(target)) {
+              console.log(target + ' is a shell builtin');
+            } else {
+              console.log(target + ': not found');
+            }
+          } else if (cmd === 'echo') {
             console.log(args.slice(1).join(' '));
-          } else if (args[0] === 'pwd') {
+          } else if (cmd === 'pwd') {
             console.log(process.cwd());
-          } else if (args[0] === 'cd') {
-            // cd doesn't output anything, just exit
-            process.exit(0);
           }
         `;
-        proc = spawn('node', ['-e', builtinScript], options);
+        proc = spawn('node', ['-e', script], options);
       } else {
-        // External command - find full path
-        const paths = process.env.PATH.split(':');
-        let fullPath = cmd;
-        
-        for (const dir of paths) {
-          const testPath = `${dir}/${cmd}`;
-          if (fs.existsSync(testPath) && fs.statSync(testPath).isFile()) {
-            fullPath = testPath;
-            break;
-          }
-        }
-        
-        proc = spawn(fullPath, cmdArgs, options);
+        proc = spawn(execPath, cmdArgs, options);
       }
 
       if (prevStdout) {
@@ -620,7 +644,6 @@ rl.on('line', (input) => {
       processes.push(proc);
     }
 
-    // Wait for all processes to finish
     const promises = processes.map(
       p => new Promise(resolve => p.on('close', resolve))
     );
