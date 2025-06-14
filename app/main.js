@@ -513,47 +513,31 @@ const unexpected = (args,command) => {
 //   }
 // }
 const externalCommand = (args) => {
-  
-  const redirectIndex = args.findIndex(arg => arg === '>' || arg === '1>');
-  let commandArgs = args;
-  let outputFile = null;
+  if (args.length === 0) return 0;
 
-  if (redirectIndex !== -1) {
-    if (!args[redirectIndex + 1]) {
-      console.log("Redirection error: no output file specified");
-      return 0;
-    }
-    outputFile = args[redirectIndex + 1];
-    commandArgs = args.slice(0, redirectIndex);
-  }
-
-  if (commandArgs.length === 0) return 0;
-
-  const command = commandArgs[0];
-  const commandArguments = commandArgs.slice(1);
+  const command = args[0];
+  const commandArguments = args.slice(1);
   const paths = process.env.PATH.split(":");
 
   for (const dir of paths) {
     const fullPath = `${dir}/${command}`;
     
-      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-        const options = {
-          encoding: "utf8",
-          stdio: outputFile
-            ? ['inherit', fs.openSync(outputFile, 'w'), 'inherit']
-            : 'inherit',
-          argv0: command,
-        };
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      const options = {
+        encoding: "utf8",
+        stdio: 'inherit',
+        argv0: command,
+      };
 
-        // ✅ Call the resolved path
-        spawnSync(fullPath, commandArguments, options);
-        return 1;
-      }
-    
+      // Call the resolved path
+      spawnSync(fullPath, commandArguments, options);
+      return 1;
+    }
   }
 
   return 0;
 };
+
 const ensureDirExists = (filePath) => {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
@@ -589,9 +573,8 @@ const withRedirection = (args, callback) => {
     const fd = fs.openSync(stdoutTarget, 'w');
     process.stdout.write = (chunk, encoding, cb) => {
       fs.writeSync(fd, chunk);
-      if (cb){ 
-        cb();
-      }
+      if (cb) cb();
+      return true;
     };
   }
 
@@ -601,15 +584,18 @@ const withRedirection = (args, callback) => {
     process.stderr.write = (chunk, encoding, cb) => {
       fs.writeSync(fd, chunk);
       if (cb) cb();
+      return true;
     };
   }
 
-  // Run command (built-in or external)
-  callback(commandArgs);
-
-  // Restore stdout/stderr
-  process.stdout.write = originalStdout;
-  process.stderr.write = originalStderr;
+  try {
+    // Run command (built-in or external)
+    callback(commandArgs);
+  } finally {
+    // Restore stdout/stderr
+    process.stdout.write = originalStdout;
+    process.stderr.write = originalStderr;
+  }
 };
 
 
