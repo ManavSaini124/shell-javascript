@@ -193,7 +193,7 @@ const externalCommand = (args) => {
           encoding: "utf8",
           stdio: output_file ?['inherit', fs.openSync(outputFile, 'w'), 'inherit']: 'inherit',
         }
-        spawnSync(command, commandArguments, option);
+        spawnSync(fullPath, commandArguments, option);
         return 1;
       }
     }
